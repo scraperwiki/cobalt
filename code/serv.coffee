@@ -12,9 +12,10 @@ app.get "/", (req, res) ->
   res.send "Hello World"
 
 app.post "/:box_name", (req, res) ->
+  res.contentType 'json'
   if req.body.apikey?
     res.send "OK"
   else
-    res.send "DENIED", 403
+    res.send '{ "error": "No API key supplied" }', 403
 
 app.listen 3000

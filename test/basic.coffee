@@ -21,6 +21,7 @@ describe 'server', ->
     u = baseurl + 'newdatabox'
     request.post {url:u}, (err, resp, body) ->
       resp.statusCode.should.equal 403
+      resp.body.should.equal '{ "error": "No API key supplied" }'
       done()
 
   it "doesn't give an error when creating a databox without a key", (done) ->
@@ -33,3 +34,5 @@ describe 'server', ->
         resp.statusCode.should.equal 200
         done()
 
+  it "returns an error when the apikey is invalid"
+  it "doesn't return an error when the apikey is valid"
