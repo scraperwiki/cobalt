@@ -12,12 +12,24 @@ describe 'server', ->
   before (done) ->
     server = require 'serv'
     done()
+
   it 'can be started', (done) ->
     http.get httpopts, (err, res) ->
       done()
+
   it 'gives an error when creating a databox without a key', (done) ->
     u = baseurl + 'newdatabox'
     request.post {url:u}, (err, resp, body) ->
-      should.exist err
+      resp.statusCode.should.equal 403
       done()
+
+  it "doesn't give an error when creating a databox without a key", (done) ->
+    options =
+      uri: baseurl + 'newdatabox'
+      form:
+        apikey: 'blah'
+
+    request.post options, (err, resp, body) ->
+        resp.statusCode.should.equal 200
+        done()
 
