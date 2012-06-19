@@ -10,6 +10,7 @@
         "mocha": ">=0.4.1",
         "should": ">0",
         "request": ">0",
-        "sinon": ">0"
+        "sinon": ">0",
+        "nock": ">0"
     }
 }
