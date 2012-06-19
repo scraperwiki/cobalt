@@ -13,6 +13,8 @@ httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000/'
 
 describe 'server', ->
+  server = null
+
   before (done) ->
     server = require 'serv'
     done()
@@ -35,6 +37,8 @@ describe 'server', ->
     apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
     before (done) ->
+      exec_stub = sinon.stub server, 'user_add', (_a, cb) -> cb()
+
       froth = nock('https://scraperwiki.com')
       .get("/froth/check_key/#{apikey}")
       .reply 200, "200", { 'content-type': 'text/plain' }
@@ -55,7 +59,8 @@ describe 'server', ->
       response.statusCode.should.equal 200
 
     it "calls the useradd command with appropriate args", ->
-      # Stub this somehow?
+      exec_stub.called.should.be.true
+      exec_stub.calledWith 'newdatabox'
 
   describe 'when the apikey is invalid', ->
     before ->

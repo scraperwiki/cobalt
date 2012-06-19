@@ -20,8 +20,8 @@ app.post "/:box_name", (req, res) ->
     url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
     request.get url, (err, resp, body) ->
       if resp.statusCode is 200
-        #exec 'ls', (err, stdout, stderr) ->
-        res.send 'ok'
+        exports.user_add req.params.box_name, ->
+          res.send 'ok'
       else
         res.send '{ "error": "Unauthorised" }', 403
   else
@@ -29,5 +29,9 @@ app.post "/:box_name", (req, res) ->
 
 app.listen 3000
 
-exports.user_add = ->
+exports.user_add = (box_name, callback) ->
+  exec "useradd #{box_name}", (err, stdout, stderr) ->
+    #TODO: what do we do if there's an error?
+    console.log stdout
+    callback()
 
