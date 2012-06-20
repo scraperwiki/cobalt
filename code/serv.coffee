@@ -30,7 +30,13 @@ app.post "/:box_name", (req, res) ->
 app.listen 3000
 
 exports.user_add = (box_name, callback) ->
-  exec "useradd #{box_name}", (err, stdout, stderr) ->
+  cmd = """
+        cd /root/deployment-hooks && . lib/chroot_user &&
+        create_user #{box_name} &&
+        create_user_directories #{box_name}
+        """
+
+  exec cmd, (err, stdout, stderr) ->
     #TODO: what do we do if there's an error?
     console.log stdout
     callback()
