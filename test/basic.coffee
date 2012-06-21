@@ -37,7 +37,8 @@ describe 'server', ->
     apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
     before (done) ->
-      exec_stub = sinon.stub server, 'user_add', (_a, cb) -> cb()
+      exec_stub = sinon.stub server, 'user_add', (_a, cb) ->
+        cb null, null, null
 
       froth = nock('https://scraperwiki.com')
       .get("/froth/check_key/#{apikey}")
@@ -58,9 +59,12 @@ describe 'server', ->
     it "doesn't return an error", ->
       response.statusCode.should.equal 200
 
-    it "calls the useradd command with appropriate args", ->
+    it 'calls the useradd command with appropriate args', ->
       exec_stub.called.should.be.true
       exec_stub.calledWith 'newdatabox'
+
+    it 'adds the box to the database'
+    it "mounts the box's filesystems" # does this belong here?
 
   describe 'when the apikey is invalid', ->
     before ->

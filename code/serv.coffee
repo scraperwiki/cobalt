@@ -11,6 +11,7 @@ app = express.createServer()
 
 app.use express.bodyParser()
 
+# TODO: Refactor routes into separate class
 app.get "/", (req, res) ->
   res.send "Hello World"
 
@@ -20,7 +21,8 @@ app.post "/:box_name", (req, res) ->
     url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
     request.get url, (err, resp, body) ->
       if resp.statusCode is 200
-        exports.user_add req.params.box_name, ->
+        exports.user_add req.params.box_name, (err, stdout, stderr) ->
+          res.send '{ "error": "Error adding user '+err+stderr+'" }' if err? or stderr?
           res.send 'ok'
       else
         res.send '{ "error": "Unauthorised" }', 403
@@ -37,7 +39,5 @@ exports.user_add = (box_name, callback) ->
         """
 
   exec cmd, (err, stdout, stderr) ->
-    #TODO: what do we do if there's an error?
-    console.log stdout
-    callback()
+    callback err, stdout, stderr
 
