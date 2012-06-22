@@ -2,3 +2,4 @@
 --ui bdd
 --compilers coffee:coffee-script
 --reporter spec
+--timeout 4000
