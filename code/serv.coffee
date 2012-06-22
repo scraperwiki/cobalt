@@ -7,8 +7,10 @@ express = require 'express'
 request = require 'request'
 exec    = require('child_process').exec
 mongoose = require 'mongoose'
+
 User = require 'models/user'
 Box = require 'models/box'
+SSHKey = require 'models/ssh_key'
 
 app = express.createServer()
 
@@ -36,6 +38,26 @@ app.post "/:box_name", (req, res) ->
         res.send '{ "error": "Unauthorised" }', 403
   else
     res.send '{ "error": "No API key supplied" }', 403
+
+app.post "/:box_name/sshkeys", (req, res) ->
+  res.contentType 'json'
+  if req.body.apikey?
+    url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
+    request.get url, (err, resp, body) ->
+      if resp.statusCode is 200
+          Box.findOne {name: req.params.box_name}, (err, box) ->
+            key = new SSHKey
+              box: box._id
+              name: SSHKey.extract_name req.body.sshkey
+              key: req.body.sshkey
+
+            key.save()
+            res.send 'ok'
+      else
+        res.send '{ "error": "Unauthorised" }', 403
+  else
+    res.send '{ "error": "No API key supplied" }', 403
+
 
 app.listen 3000
 
