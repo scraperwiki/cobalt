@@ -16,7 +16,7 @@ app = express.createServer()
 
 app.use express.bodyParser()
 
-mongoose.connect "mongodb://mong:#{process.env['COBALT_DB_PASS']}@flame.mongohq.com:27055/cobalt-test"
+mongoose.connect process.env['COBALT_DB']
 
 app.get "/", (req, res) ->
   res.send "Hello World"

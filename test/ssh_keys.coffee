@@ -23,7 +23,7 @@ describe 'SSH keys:', ->
 
     before (done) ->
       server = require 'serv'
-      mongoose.connect "mongodb://mong:#{process.env['COBALT_DB_PASS']}@flame.mongohq.com:27055/cobalt-test"
+      mongoose.connect process.env['COBALT_DB']
       # TODO: icky, we want fixtures or mocking
       User.collection.drop()
       Box.collection.drop()
