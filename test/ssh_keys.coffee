@@ -82,7 +82,7 @@ describe 'SSH keys:', ->
             should.exist key
             done()
 
-        it "overwrites the box's authorized_keys file"
+        it "overwrites the box's authorized_keys file with all ssh keys"
       
     describe 'when the apikey is invalid', ->
       before ->
