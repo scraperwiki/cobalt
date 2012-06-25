@@ -7,6 +7,7 @@ should = require 'should'
 nock   = require 'nock'
 sinon  = require 'sinon'
 fs     = require 'fs'
+child_process = require 'child_process'
 
 mongoose = require 'mongoose'
 User = require 'models/user'
@@ -21,6 +22,7 @@ describe 'SSH keys:', ->
   describe '( POST /<box_name>/sshkeys )', ->
     server = null
     write_stub = null
+    chmod_stub = null
     URL = "#{BASE_URL}newdatabox/sshkeys"
 
     before (done) ->
@@ -36,6 +38,8 @@ describe 'SSH keys:', ->
         done()
       #write_stub = sinon.stub fs, 'writeFile', (_p, _t, _e, cb) -> cb()
       write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
+      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", 600
+      chown_stub = sinon.stub(child_process, 'exec').withArgs "chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
 
     after (done) ->
       mongoose.disconnect ->
@@ -88,6 +92,7 @@ describe 'SSH keys:', ->
 
         it "overwrites the box's authorized_keys file with all ssh keys", ->
           write_stub.calledOnce.should.be.true
+          chmod_stub.calledOnce.should.be.true
       
     describe 'when the apikey is invalid', ->
       before ->

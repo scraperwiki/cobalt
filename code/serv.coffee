@@ -4,6 +4,7 @@
 # http server for cobalt.
 
 fs      = require 'fs'
+child_process = require 'child_process'
 
 express = require 'express'
 request = require 'request'
@@ -65,6 +66,8 @@ app.post "/:box_name/sshkeys$", (req, res) ->
           "#{key.key}"
 
         fs.writeFileSync keys_path, keys.join '\n', 'utf8'
+        fs.chmodSync keys_path, 600
+        child_process.exec "chown #{box.name}: #{keys_path}" # insecure
         res.send 'ok'
 
 app.listen 3000
@@ -75,6 +78,6 @@ exports.unix_user_add = (box_name, callback) ->
         create_user #{box_name} &&
         create_user_directories #{box_name}
         """
-
+  # insecure
   exec cmd, (err, stdout, stderr) ->
     callback err, stdout, stderr
