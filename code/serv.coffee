@@ -76,8 +76,9 @@ exports.unix_user_add = (box_name, callback) ->
   cmd = """
         cd /root/deployment-hooks && . lib/chroot_user &&
         create_user #{box_name} &&
-        create_user_directories #{box_name}
+        create_user_directories #{box_name} &&
+        mkdir /opt/cobalt/etc/sshkeys/#{box_name}
         """
-  # insecure
+  # insecure - sanitise box_name
   exec cmd, (err, stdout, stderr) ->
     callback err, stdout, stderr
