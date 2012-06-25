@@ -40,7 +40,7 @@ describe 'SSH keys:', ->
     it 'gives an error when creating a databox without a key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
         resp.statusCode.should.equal 403
-        resp.body.should.equal '{ "error": "No API key supplied" }'
+        resp.body.should.equal '{"error":"No API key supplied"}'
         done()
 
     describe 'when the apikey is valid and box exists', ->
@@ -99,7 +99,7 @@ describe 'SSH keys:', ->
 
         request.post options, (err, resp, body) ->
             resp.statusCode.should.equal 403
-            resp.body.should.equal '{ "error": "Unauthorised" }'
+            resp.body.should.equal '{"error":"Unauthorised"}'
             done()
 
     describe "when the box doesn't exist", ->
@@ -123,7 +123,7 @@ describe 'SSH keys:', ->
             done()
 
       it 'returns an error', ->
-        response.body.should.equal '{ "error": "SSH Key not specified" }'
+        response.body.should.equal '{"error":"SSH Key not specified"}'
 
     describe "when sshkey isn't valid", ->
       it 'returns an error if completely invalid'

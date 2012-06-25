@@ -33,7 +33,7 @@ describe 'Creating a box:', ->
       u = baseurl + 'newdatabox'
       request.post {url:u}, (err, resp, body) ->
         resp.statusCode.should.equal 403
-        resp.body.should.equal '{ "error": "No API key supplied" }'
+        resp.body.should.equal '{"error":"No API key supplied"}'
         done()
 
     describe 'when the apikey is valid', ->
@@ -94,5 +94,5 @@ describe 'Creating a box:', ->
 
         request.post options, (err, resp, body) ->
             resp.statusCode.should.equal 403
-            resp.body.should.equal '{ "error": "Unauthorised" }'
+            resp.body.should.equal '{"error":"Unauthorised"}'
             done()
