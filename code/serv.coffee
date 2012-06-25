@@ -18,50 +18,48 @@ app.use express.bodyParser()
 
 mongoose.connect "mongodb://mong:#{process.env['COBALT_DB_PASS']}@flame.mongohq.com:27055/cobalt-test"
 
-# TODO: Refactor routes into separate class
 app.get "/", (req, res) ->
   res.send "Hello World"
 
-app.post "/:box_name$", (req, res) ->
+# Check API key for all POSTs 
+# TODO: should this be middleware?
+app.post /.*/, (req, res, next) ->
   res.contentType 'json'
   if req.body.apikey?
     url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
     request.get url, (err, resp, body) ->
       if resp.statusCode is 200
-        exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
-          res.send '{ "error": "Error adding user '+err+stderr+'" }' if err? or stderr?
-          new User({apikey: req.body.apikey}).save()
-          User.findOne {apikey: req.body.apikey}, (err, user) ->
-            return res.send '{ "error": "User not found" }', 404 unless user?
-            new Box({user: user._id, name: req.params.box_name}).save()
-            res.send 'ok'
+        next()
       else
         res.send '{ "error": "Unauthorised" }', 403
   else
     res.send '{ "error": "No API key supplied" }', 403
 
+# Create a box
+app.post "/:box_name$", (req, res) ->
+  res.contentType 'json'
+  exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
+    res.send '{ "error": "Error adding user '+err+stderr+'" }' if err? or stderr?
+    new User({apikey: req.body.apikey}).save()
+    User.findOne {apikey: req.body.apikey}, (err, user) ->
+      return res.send '{ "error": "User not found" }', 404 unless user?
+      new Box({user: user._id, name: req.params.box_name}).save()
+      res.send 'ok'
+
+# Add an SSH key to a box
 app.post "/:box_name/sshkeys$", (req, res) ->
   res.contentType 'json'
   res.send '{ "error": "SSH Key not specified" }', 400 unless req.body.sshkey?
 
-  if req.body.apikey?
-    url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
-    request.get url, (err, resp, body) ->
-      if resp.statusCode is 200
-          Box.findOne {name: req.params.box_name}, (err, box) ->
-            return res.send '{ "error": "Box not found" }', 404 unless box?
-            key = new SSHKey
-              box: box._id
-              name: SSHKey.extract_name req.body.sshkey
-              key: req.body.sshkey
+  Box.findOne {name: req.params.box_name}, (err, box) ->
+    return res.send '{ "error": "Box not found" }', 404 unless box?
+    key = new SSHKey
+      box: box._id
+      name: SSHKey.extract_name req.body.sshkey
+      key: req.body.sshkey
 
-            key.save()
-            res.send 'ok'
-      else
-        res.send '{ "error": "Unauthorised" }', 403
-  else
-    res.send '{ "error": "No API key supplied" }', 403
-
+    key.save()
+    res.send 'ok'
 
 app.listen 3000
 
