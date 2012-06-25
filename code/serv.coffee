@@ -3,6 +3,8 @@
 # serv.ps
 # http server for cobalt.
 
+fs      = require 'fs'
+
 express = require 'express'
 request = require 'request'
 exec    = require('child_process').exec
@@ -55,8 +57,15 @@ app.post "/:box_name/sshkeys$", (req, res) ->
       name: SSHKey.extract_name req.body.sshkey
       key: req.body.sshkey
 
-    key.save()
-    res.send 'ok'
+    key.save ->
+      SSHKey.find {box: box._id}, (err, sshkeys) ->
+        keys_path = "/opt/cobalt/etc/sshkeys/#{box.name}/authorized_keys"
+
+        keys = for key in sshkeys
+          "#{key.key}"
+
+        fs.writeFileSync keys_path, keys.join '\n', 'utf8'
+        res.send 'ok'
 
 app.listen 3000
 
@@ -69,4 +78,3 @@ exports.unix_user_add = (box_name, callback) ->
 
   exec cmd, (err, stdout, stderr) ->
     callback err, stdout, stderr
-

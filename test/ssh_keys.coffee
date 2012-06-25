@@ -6,6 +6,7 @@ request = require 'request'
 should = require 'should'
 nock   = require 'nock'
 sinon  = require 'sinon'
+fs     = require 'fs'
 
 mongoose = require 'mongoose'
 User = require 'models/user'
@@ -19,6 +20,7 @@ apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 describe 'SSH keys:', ->
   describe '( POST /<box_name>/sshkeys )', ->
     server = null
+    write_stub = null
     URL = "#{BASE_URL}newdatabox/sshkeys"
 
     before (done) ->
@@ -32,6 +34,8 @@ describe 'SSH keys:', ->
         new Box({user: user._id, name: 'newdatabox'}).save()
         SSHKey.collection.drop()
         done()
+      #write_stub = sinon.stub fs, 'writeFile', (_p, _t, _e, cb) -> cb()
+      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
 
     after (done) ->
       mongoose.disconnect ->
@@ -82,7 +86,8 @@ describe 'SSH keys:', ->
             should.exist key
             done()
 
-        it "overwrites the box's authorized_keys file with all ssh keys"
+        it "overwrites the box's authorized_keys file with all ssh keys", ->
+          write_stub.calledOnce.should.be.true
       
     describe 'when the apikey is invalid', ->
       before ->
