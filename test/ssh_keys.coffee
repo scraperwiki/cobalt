@@ -81,6 +81,8 @@ describe 'SSH keys:', ->
           SSHKey.findOne {name: 'tlevine@motorsag'}, (err, key) ->
             should.exist key
             done()
+
+        it "overwrites the box's authorized_keys file"
       
     describe 'when the apikey is invalid', ->
       before ->
