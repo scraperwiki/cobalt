@@ -113,7 +113,28 @@ describe 'SSH keys:', ->
             done()
 
     describe "when the box doesn't exist", ->
-      it 'returns an error'
+      response = null
+      before (done) ->
+        froth = nock('https://scraperwiki.com')
+        .get("/froth/check_key/#{apikey}")
+        .reply 200, "200", { 'content-type': 'text/plain' }
+
+        options =
+          uri: URL
+          form:
+            apikey: apikey
+            sshkey: 'is not checked'
+
+        options.uri = options.uri.replace 'newdatabox', 'nodatabox'
+
+        request.post options, (err, resp, body) ->
+            response = resp
+            done()
+
+      it 'returns an error', (done) ->
+          response.statusCode.should.equal 404
+          response.body.should.equal '{"error":"Box not found"}'
+          done()
 
     describe "when sshkey isn't present", ->
       response = null
