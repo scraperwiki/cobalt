@@ -17,3 +17,6 @@ deactivate () {
     PS1=$OLD_PS1
     NODE_PATH=$OLD_NODE_PATH
 }
+
+s=../swops-secret/keys.sh
+test -e "$s" && . "$s"
