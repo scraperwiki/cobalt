@@ -20,3 +20,4 @@ deactivate () {
 
 s=../swops-secret/keys.sh
 test -e "$s" && . "$s"
+true
