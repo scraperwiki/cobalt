@@ -49,13 +49,15 @@ app.post "/:box_name$", (req, res) ->
 
 # Add an SSH key to a box
 app.post "/:box_name/sshkeys$", (req, res) ->
-  res.send { error: "SSH Key not specified" }, 400 unless req.body.sshkey?
+  unless req.body.sshkey? then return res.send { error: "SSH Key not specified" }, 400
 
   Box.findOne {name: req.params.box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
+    name =  SSHKey.extract_name req.body.sshkey
+    unless name then return res.send { error: "SSH Key has no name" }, 400
     key = new SSHKey
       box: box._id
-      name: SSHKey.extract_name req.body.sshkey
+      name: name
       key: req.body.sshkey
 
     key.save ->

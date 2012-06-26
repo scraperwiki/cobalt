@@ -157,6 +157,28 @@ describe 'SSH keys:', ->
         response.body.should.equal '{"error":"SSH Key not specified"}'
 
     describe "when sshkey isn't valid", ->
+      before ->
+        froth = nock('https://scraperwiki.com')
+        .get("/froth/check_key/#{apikey}")
+        .reply 200, "200", { 'content-type': 'text/plain' }
+
+
+      # do we need this now?
       it 'returns an error if completely invalid'
-      it 'returns an error if no name'
+
+      it 'returns an error if no name', (done) ->
+        noname_sshkey =
+          """
+          ssh-dss AAAAB3NzaC1kc3MAAACBAPvBVeF9dMD7HFW5oGxd30JlfmhkAc8/Z+JIYmrZF1vTCpSyByYkDzey9DDR3Etob2YIEL/wn8/EQMCh8hNH96vQSzGqRXVYL37I89YbDWgkXLg9NcdJL7WwsnTioGJSCmc95OPXELREzoqqBL+N43JeVesreKBBJlX7haBdMdBVAAAAFQCVQ3RMcRY6OghLiqSL3sUHYuf8BwAAAIEAz58IebcwRIddJiVGZBpm/+wxErKe+iyz8HWvDc7qHEYTfds9Gpk3DaMjV+aPklataCA+dYY/XTo3NFhm0gt/ENs6FJjYPhKdByFv/iPny8T5C+Fhy1czgb3SdzFpHMK9ICTi/aUSXES/Z8aCsanBTWjlmgc1RgCCxoa+jLoei9AAAACAZYWhPRKTsqZlPncfLlEdFfn9oqHAqd3jVAHjc6f2UFLoPjTlALcdy+cSf/Hp/1Ga8WVBB8Twm0H6hz78EQO6AXf56XagBv7hd4pRetxe8E1OebwbRQkPzuAh4h/rTfK0uLp7koNZLUuH4wfFEkV4pxcoV4XM+9YjoalWKxJEiB4=
+          """
+
+        options =
+          uri: URL
+          form:
+            apikey: apikey
+            sshkey: noname_sshkey
+
+        request.post options, (err, resp, body) ->
+            resp.body.should.equal '{"error":"SSH Key has no name"}'
+            done()
 

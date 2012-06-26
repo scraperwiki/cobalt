@@ -8,6 +8,7 @@ sshKeySchema = new Schema
   key: {type: String, unique: true}
 
 sshKeySchema.statics.extract_name = (key) ->
-  (key.trim().match /(?:ssh-rsa|ssh-dss).*\s(.*)$/m)[1]
+  return false if (!key? or key.length < 1)
+  (key.trim().match /(?:ssh-rsa|ssh-dss)\s+[^\s]+\s*(.*)$/m)[1]
 
 module.exports = mongoose.model 'SSHKey', sshKeySchema
