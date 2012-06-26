@@ -45,7 +45,7 @@ describe 'SSH keys:', ->
       mongoose.disconnect ->
         done()
 
-    it 'gives an error when creating a databox without a key', (done) ->
+    it 'gives an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
         resp.statusCode.should.equal 403
         resp.body.should.equal '{"error":"No API key supplied"}'
