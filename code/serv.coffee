@@ -80,5 +80,4 @@ exports.unix_user_add = (box_name, callback) ->
         mkdir /opt/cobalt/etc/sshkeys/#{box_name}
         """
   # insecure - sanitise box_name
-  exec cmd, (err, stdout, stderr) ->
-    callback err, stdout, stderr
+  exec cmd, callback
