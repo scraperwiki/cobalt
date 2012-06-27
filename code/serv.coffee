@@ -18,6 +18,7 @@ SSHKey = require 'models/ssh_key'
 app = express.createServer()
 
 app.use express.bodyParser()
+app.use express.logger()
 
 mongoose.connect process.env['COBALT_DB']
 
