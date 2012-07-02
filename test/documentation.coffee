@@ -17,6 +17,21 @@ APIKEY = 'htsaoeuhtsaoehtoeuahtnsaoeuht'
 BOX = 'asotehusatoehus'
 
 describe 'Box SSH documentation', ->
+  describe '( GET / )', ->
+    server = null
+
+    before (done) ->
+      server = require 'serv'
+      done()
+
+    it 'documents how to SSH into a box', (done) ->
+      u = baseurl
+      request.get {url:u}, (err, resp, body) ->
+        resp.statusCode.should.equal 200
+        resp.body.should.include 'create'
+        resp.body.should.include 'API'
+        done()
+
   describe '( GET /<box_name> )', ->
     server = null
 
@@ -36,7 +51,7 @@ describe 'Box SSH documentation', ->
       u = baseurl + BOX
       request.get {url:u}, (err, resp, body) ->
         resp.statusCode.should.equal 200
-        resp.body.should.contain 'ssh'
-        resp.body.should.contain '@'
+        resp.body.should.include 'ssh'
+        resp.body.should.include '@'
         done()
 
