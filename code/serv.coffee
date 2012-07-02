@@ -34,7 +34,8 @@ app.set('view engine', 'ejs')
 
 app.get "/", (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.render('index')
+  #342709d1-45b0-4d2e-ad66-6fb81d10e34e
+  res.render('index', {rooturl:'example.com'})
 
 # Check API key for all POSTs 
 # TODO: should this be middleware?
@@ -52,7 +53,10 @@ app.post /.*/, (req, res, next) ->
 # Documentation for SSHing to a box.
 app.get "/:box_name$", (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.render('box', { box_name: req.params.box_name })
+  res.render('box', {
+     box_name: req.params.box_name,
+    rooturl:'example.com'
+  })
 
 # Create a box
 app.post "/:box_name$", (req, res) ->

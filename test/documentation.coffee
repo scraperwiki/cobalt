@@ -13,10 +13,10 @@ Box = require 'models/box'
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000/'
 
-APIKEY = 'htsaoeuhtsaoehtoeuahtnsaoeuht'
-BOX = 'asotehusatoehus'
+APIKEY = '342709d1-45b0-2d2e-sd66-6fb81d10e34e'
+BOX = 'olddatabox'
 
-describe 'Box SSH documentation', ->
+describe 'Box documentation', ->
   describe '( GET / )', ->
     server = null
 
@@ -24,12 +24,13 @@ describe 'Box SSH documentation', ->
       server = require 'serv'
       done()
 
-    it 'documents how to SSH into a box', (done) ->
+    it 'documents how to create a box', (done) ->
       u = baseurl
       request.get {url:u}, (err, resp, body) ->
         resp.statusCode.should.equal 200
-        resp.body.should.include 'create'
+        resp.body.should.include 'reate'
         resp.body.should.include 'API'
+        resp.body.should.include 'curl'
         done()
 
   describe '( GET /<box_name> )', ->
@@ -52,6 +53,7 @@ describe 'Box SSH documentation', ->
       request.get {url:u}, (err, resp, body) ->
         resp.statusCode.should.equal 200
         resp.body.should.include 'ssh'
+        resp.body.should.include 'curl'
         resp.body.should.include '@'
         done()
 
