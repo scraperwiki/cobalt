@@ -4,8 +4,8 @@ ObjectId = Schema.ObjectId
 
 sshKeySchema = new Schema
   box: ObjectId
-  name: {type: String, unique: true}
-  key: {type: String, unique: true}
+  name: {type: String}
+  key: {type: String}
 
 sshKeySchema.statics.extract_name = (key) ->
   return false if (!key? or key.length < 1)
