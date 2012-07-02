@@ -34,7 +34,6 @@ app.set('view engine', 'ejs')
 
 app.get "/", (req, res) ->
   res.header('Content-Type', 'application/json')
-  #342709d1-45b0-4d2e-ad66-6fb81d10e34e
   res.render('index', {rooturl:'example.com'})
 
 # Check API key for all POSTs 
