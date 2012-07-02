@@ -29,8 +29,12 @@ app.configure 'production', ->
 
 mongoose.connect process.env['COBALT_DB']
 
+# Templating language
+app.set('view engine', 'ejs')
+
 app.get "/", (req, res) ->
-  res.send "Finish this."
+  res.header('Content-Type', 'application/json')
+  res.render('index')
 
 # Check API key for all POSTs 
 # TODO: should this be middleware?
@@ -47,7 +51,8 @@ app.post /.*/, (req, res, next) ->
 
 # Documentation for SSHing to a box.
 app.get "/:box_name$", (req, res) ->
-  res.send "Finish this." + req.params.box_name
+  res.header('Content-Type', 'application/json')
+  res.render('box', { box_name: req.params.box_name })
 
 # Create a box
 app.post "/:box_name$", (req, res) ->
