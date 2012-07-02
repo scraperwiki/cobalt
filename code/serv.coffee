@@ -30,7 +30,7 @@ app.configure 'production', ->
 mongoose.connect process.env['COBALT_DB']
 
 app.get "/", (req, res) ->
-  res.send "Hello World"
+  res.send "Finish this."
 
 # Check API key for all POSTs 
 # TODO: should this be middleware?
@@ -44,6 +44,10 @@ app.post /.*/, (req, res, next) ->
         res.send {error: "Unauthorised"}, 403
   else
     res.send {error: "No API key supplied"}, 403
+
+# Documentation for SSHing to a box.
+app.get "/:box_name$", (req, res) ->
+  res.send "Finish this." + req.params.box_name
 
 # Create a box
 app.post "/:box_name$", (req, res) ->
