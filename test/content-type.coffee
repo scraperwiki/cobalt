@@ -12,28 +12,37 @@ httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000/'
 
 describe 'Content Types', ->
-  describe '( GET /foo )', ->
-    server = null
-
-    before (done) ->
-      server = require 'serv'
-      done()
-
-    it 'has JSON MIME type', (done) ->
-      u = baseurl + 'foo'
-      request.get {url:u}, (err, resp, body) ->
-        resp.headers['content-type'].should.equal 'application/json'
+  content_type = (path) ->
+    describe '( GET /' + path + ' )', ->
+      server = null
+ 
+      before (done) ->
+        server = require 'serv'
         done()
+ 
+      it 'has JSON MIME type on get', (done) ->
+        u = baseurl + path
+        request.get {url:u}, (err, resp, body) ->
+          resp.headers['content-type'].should.include 'application/json'
+          done()
 
-  describe '( GET / )', ->
-    server = null
+      it 'has JSON MIME type on delete', (done) ->
+        u = baseurl + path
+        request.delete {url:u}, (err, resp, body) ->
+          resp.headers['content-type'].should.include 'application/json'
+          done()
 
-    before (done) ->
-      server = require 'serv'
-      done()
+      it 'has JSON MIME type on put', (done) ->
+        u = baseurl + path
+        request.put {url:u}, (err, resp, body) ->
+          resp.headers['content-type'].should.include 'application/json'
+          done()
 
-    it 'has JSON MIME type', (done) ->
-      u = baseurl
-      request.get {url:u}, (err, resp, body) ->
-        resp.headers['content-type'].should.equal 'application/json'
-        done()
+      it 'has JSON MIME type on post', (done) ->
+        u = baseurl + path
+        request.post {url:u}, (err, resp, body) ->
+          resp.headers['content-type'].should.include 'application/json'
+          done()
+
+  content_type ''
+  content_type 'aoeuao'

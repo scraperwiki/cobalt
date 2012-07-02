@@ -39,6 +39,7 @@ app.get "/", (req, res) ->
 # Check API key for all POSTs 
 # TODO: should this be middleware?
 app.post /.*/, (req, res, next) ->
+  res.header('Content-Type', 'application/json')
   if req.body.apikey?
     url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
     request.get url, (err, resp, body) ->
@@ -59,6 +60,7 @@ app.get "/:box_name$", (req, res) ->
 
 # Create a box
 app.post "/:box_name$", (req, res) ->
+  res.header('Content-Type', 'application/json')
   exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
     res.send {error: "Error adding user: #{err} #{stderr}"} if err? or stderr?
     new User({apikey: req.body.apikey}).save()
@@ -69,6 +71,7 @@ app.post "/:box_name$", (req, res) ->
 
 # Add an SSH key to a box
 app.post "/:box_name/sshkeys$", (req, res) ->
+  res.header('Content-Type', 'application/json')
   unless req.body.sshkey? then return res.send { error: "SSH Key not specified" }, 400
 
   Box.findOne {name: req.params.box_name}, (err, box) ->
