@@ -62,12 +62,14 @@ app.get "/:box_name$", (req, res) ->
 app.post "/:box_name$", (req, res) ->
   res.header('Content-Type', 'application/json')
   exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
-    res.send {error: "Error adding user: #{err} #{stderr}"} if err? or stderr?
+    any_stderr = stderr is not ''
+    res.send {error: "Error adding user: #{err} #{stderr}"} if err? or any_stderr
+
     new User({apikey: req.body.apikey}).save()
     User.findOne {apikey: req.body.apikey}, (err, user) ->
       return res.send {error: "User not found" }, 404 unless user?
       new Box({user: user._id, name: req.params.box_name}).save()
-      res.send 'ok'
+      res.send '{"status": "ok"}'
 
 # Add an SSH key to a box
 app.post "/:box_name/sshkeys$", (req, res) ->
