@@ -35,8 +35,21 @@ You need to set up the environment and so on:
 
 Using lithium spends money.  Not much.
 
-   li
-   li list
-   li create boxecutor
-   li start boxecutor_1
-   li deploy boxecutor_1
+    li
+    li list
+    li create boxecutor
+    li start boxecutor_1
+    li deploy boxecutor_1
+
+### Server States ###
+
+                              .---------stop----------.
+                              v                       |
+    +-----+            +-------------+           +---------+
+    |     | --create-> | not running | --start-> | running |
+    +-----+            +-------------+           +---------+
+       ^                      |                       |
+       `-------------------destroy--------------------'
+                            
+
+
