@@ -1,7 +1,4 @@
-cobalt
-======
-
-ScraperWiki Cobalt
+# ScraperWiki Cobalt #
 
 Cobalt is a ScraperWiki service where people can run code on the internet in
 a sandboxed environment.
@@ -14,6 +11,12 @@ be cloned side-by-side.  Pick a new directory if you want.
     git clone git@bitbucket.org:ScraperWiki/swops-secret.git
     git clone git@github.com:scraperwiki/lithium.git
     git clone git@github.com:scraperwiki/cobalt.git
+    
+Lithium and Cobalt both have their own dependencies for Node packages. You'll need to install them when you first clone, and then every now and then as the dependencies change:
+
+    for d in lithium cobalt; do ( cd $d; npm install ) done
+    
+Running this when you don't need to is fine – it doesn't take very long.
 
 ### Coming Back ###
 
@@ -31,7 +34,7 @@ You need to set up the environment and so on:
     . ../swops-secret/keys.sh
     . ./activate
 
-### Using lithium ###
+### Using Lithium ###
 
 Using lithium spends money.  Not much.
 
