@@ -13,7 +13,7 @@ baseurl = 'http://127.0.0.1:3000/'
 
 describe 'Content Types', ->
   content_type = (path) ->
-    describe '( GET /' + path + ' )', ->
+    describe '( Path /' + path + ' )', ->
       server = null
  
       before (done) ->
@@ -23,18 +23,6 @@ describe 'Content Types', ->
       it 'has JSON MIME type on get', (done) ->
         u = baseurl + path
         request.get {url:u}, (err, resp, body) ->
-          resp.headers['content-type'].should.include 'application/json'
-          done()
-
-      it 'has JSON MIME type on delete', (done) ->
-        u = baseurl + path
-        request.delete {url:u}, (err, resp, body) ->
-          resp.headers['content-type'].should.include 'application/json'
-          done()
-
-      it 'has JSON MIME type on put', (done) ->
-        u = baseurl + path
-        request.put {url:u}, (err, resp, body) ->
           resp.headers['content-type'].should.include 'application/json'
           done()
 

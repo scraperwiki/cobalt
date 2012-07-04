@@ -8,6 +8,7 @@ nock   = require 'nock'
 sinon  = require 'sinon'
 fs     = require 'fs'
 child_process = require 'child_process'
+_ = require 'underscore'
 
 mongoose = require 'mongoose'
 User = require 'models/user'
@@ -48,7 +49,7 @@ describe 'SSH keys:', ->
     it 'gives an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
         resp.statusCode.should.equal 403
-        resp.body.should.equal '{"error":"No API key supplied"}'
+        (_.isEqual (JSON.parse resp.body), {"error":"No API key supplied"}).should.be.true
         done()
 
     describe 'when the apikey is valid and box exists', ->
@@ -109,7 +110,7 @@ describe 'SSH keys:', ->
 
         request.post options, (err, resp, body) ->
             resp.statusCode.should.equal 403
-            resp.body.should.equal '{"error":"Unauthorised"}'
+            (_.isEqual (JSON.parse resp.body), {"error":"Unauthorised"}).should.be.true
             done()
 
     describe "when the box doesn't exist", ->
@@ -133,7 +134,7 @@ describe 'SSH keys:', ->
 
       it 'returns an error', (done) ->
           response.statusCode.should.equal 404
-          response.body.should.equal '{"error":"Box not found"}'
+          (_.isEqual (JSON.parse response.body), {"error":"Box not found"}).should.be.true
           done()
 
     describe "when sshkey isn't present", ->
@@ -154,7 +155,7 @@ describe 'SSH keys:', ->
             done()
 
       it 'returns an error', ->
-        response.body.should.equal '{"error":"SSH Key not specified"}'
+        (_.isEqual (JSON.parse response.body), {"error":"SSH Key not specified"}).should.be.true
 
     describe "when sshkey isn't valid", ->
       before ->
@@ -179,6 +180,6 @@ describe 'SSH keys:', ->
             sshkey: noname_sshkey
 
         request.post options, (err, resp, body) ->
-            resp.body.should.equal '{"error":"SSH Key has no name"}'
+            (_.isEqual (JSON.parse resp.body),  {"error":"SSH Key has no name"}).should.be.true
             done()
 

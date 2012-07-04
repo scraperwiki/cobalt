@@ -45,8 +45,11 @@ describe 'Box documentation', ->
       new User({apikey: APIKEY}).save()
       User.findOne {apikey: APIKEY}, (err, user) ->
         new Box({user: user._id, name: BOX}).save()
+        done()
 
-      done()
+    after (done) ->
+      mongoose.disconnect ->
+        done()
 
     it 'documents how to SSH into a box', (done) ->
       u = baseurl + BOX
