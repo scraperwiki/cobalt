@@ -36,9 +36,8 @@ app.get "/", (req, res) ->
   res.header('Content-Type', 'application/json')
   res.render('index', {rooturl:'example.com'})
 
-# Check API key for all POSTs 
 # TODO: should this be middleware?
-app.post /.*/, (req, res, next) ->
+check_api_key = (req, res, next) ->
   res.header('Content-Type', 'application/json')
   if req.body.apikey?
     url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
@@ -50,11 +49,15 @@ app.post /.*/, (req, res, next) ->
   else
     res.send {error: "No API key supplied"}, 403
 
+# Check API key for all POSTs 
+app.post /.*/, check_api_key
+app.delete /.*/, check_api_key
+
 # Documentation for SSHing to a box.
 app.get "/:box_name$", (req, res) ->
   res.header('Content-Type', 'application/json')
   Box.findOne {name: req.params.box_name}, (err, box) ->
-    return res.send { error: "Box not found" }, 404 unless box?
+    return (res.send { error: "Box not found" }, 404) unless box?
     res.render('box', {
       box_name: req.params.box_name,
       rooturl:'example.com'
