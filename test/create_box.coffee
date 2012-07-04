@@ -34,7 +34,7 @@ describe 'Creating a box:', ->
       u = baseurl + 'newdatabox'
       request.post {url:u}, (err, resp, body) ->
         resp.statusCode.should.equal 403
-        resp.body.should.equal '{\n  "error": "No API key supplied"\n}'
+        (_.isEqual (JSON.parse resp.body), {'error':'No API key supplied'}).should.be.true
         done()
 
     describe 'when the apikey is valid', ->
