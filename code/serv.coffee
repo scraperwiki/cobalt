@@ -53,10 +53,12 @@ app.post /.*/, (req, res, next) ->
 # Documentation for SSHing to a box.
 app.get "/:box_name$", (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.render('box', {
-     box_name: req.params.box_name,
-    rooturl:'example.com'
-  })
+  Box.findOne {name: req.params.box_name}, (err, box) ->
+    return res.send { error: "Box not found" }, 404 unless box?
+    res.render('box', {
+      box_name: req.params.box_name,
+      rooturl:'example.com'
+    })
 
 # Create a box
 app.post "/:box_name$", (req, res) ->
