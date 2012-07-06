@@ -9,6 +9,8 @@ sshKeySchema = new Schema
 
 sshKeySchema.statics.extract_name = (key) ->
   return false if (!key? or key.length < 1)
-  (key.trim().match /(?:ssh-rsa|ssh-dss)\s+[^\s]+\s*(.*)$/m)[1]
+  matches = key.trim().match /(?:ssh-rsa|ssh-dss)\s+[^\s]+\s*(.*)$/m
+  return false unless matches[1]?
+  matches[1]
 
 module.exports = mongoose.model 'SSHKey', sshKeySchema
