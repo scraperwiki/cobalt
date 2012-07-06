@@ -5,6 +5,7 @@
 
 fs      = require 'fs'
 child_process = require 'child_process'
+os      = require 'os'
 
 express = require 'express'
 request = require 'request'
@@ -29,12 +30,17 @@ app.configure 'production', ->
 
 mongoose.connect process.env['COBALT_DB']
 
+server_ip = '127.0.0.1'
+interfaces = os.networkInterfaces()
+server_ip = interfaces.eth0[0].address if interfaces.eth0?
+root_url = "http://#{server_ip}:3000"
+
 # Templating language
 app.set('view engine', 'ejs')
 
 app.get "/", (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.render('index', {rooturl:'example.com'})
+  res.render('index', {rooturl: root_url})
 
 # TODO: should this be middleware?
 check_api_key = (req, res, next) ->
@@ -57,11 +63,12 @@ app.delete /.*/, check_api_key
 app.get "/:box_name$", (req, res) ->
   res.header('Content-Type', 'application/json')
   Box.findOne {name: req.params.box_name}, (err, box) ->
-    return (res.send { error: "Box not found" }, 404) unless box?
-    res.render('box', {
-      box_name: req.params.box_name,
-      rooturl:'example.com'
-    })
+    return res.send { error: "Box not found" }, 404 unless box?
+    res.render 'box',
+      box_name: req.params.box_name
+      rooturl: root_url
+      server_ip: server_ip
+
 
 # Create a box
 app.post "/:box_name$", (req, res) ->

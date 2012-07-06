@@ -3,8 +3,8 @@
   "message": [
     "This is a box that you can SSH to.",
     "Add your SSH public key with the web API.",
-    "curl --data "sshkey=`cat ~/.ssh/id_[rd]sa`&apikey=$apikey" <%= rooturl %>/<boxname>/sshkeys",
+    "curl --data-urlencode "sshkey=$(cat ~/.ssh/id_[rd]sa)&apikey=$apikey" <%= rooturl %>/<boxname>/sshkeys",
     "Then connect.",
-    "ssh <%= box_name %>@<%= rooturl %>"
+    "ssh <%= box_name %>@<%= server_ip %>"
   ]
 }

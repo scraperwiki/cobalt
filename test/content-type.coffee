@@ -33,4 +33,4 @@ describe 'Content Types', ->
           done()
 
   content_type ''
-  content_type 'aoeuao'
+  #content_type 'aoeuao'
