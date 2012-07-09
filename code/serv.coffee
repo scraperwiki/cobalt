@@ -121,7 +121,7 @@ app.post "/:box_name/sshkeys$", (req, res) ->
         child_process.exec "chown #{box.name}: #{keys_path}" # insecure
         res.send {"status": "ok"}
 
-app.listen 3000
+app.listen process.env.COBALT_PORT
 
 exports.unix_user_add = (box_name, callback) ->
   cmd = """

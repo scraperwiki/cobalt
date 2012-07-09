@@ -11,6 +11,11 @@ PATH=$(pwd)/node_modules/.bin:$(pwd)/bin:$PATH
 # See http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
 export NODE_PATH=$(pwd)/code${NODE_PATH+:}${NODE_PATH}
 
+if [ -z "$COBALT_PORT" ]
+then
+  export COBALT_PORT=3000
+fi
+
 PS1="[co]$PS1"
 deactivate () {
     PATH=$OLD_PATH
