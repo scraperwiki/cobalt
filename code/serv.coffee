@@ -73,6 +73,10 @@ app.get "/:box_name$", (req, res) ->
 # Create a box
 app.post "/:box_name$", (req, res) ->
   res.header('Content-Type', 'application/json')
+  re = /^[a-zA-Z0-9_+-]+$/
+  if not re.test req.params.box_name
+     return res.send {error:
+       "Box name should match the regular expression #{String(re)}"}, 404
   exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
     any_stderr = stderr is not ''
     res.send {error: "Error adding user: #{err} #{stderr}"} if err? or any_stderr
