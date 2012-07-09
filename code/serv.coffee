@@ -33,7 +33,8 @@ mongoose.connect process.env['COBALT_DB']
 server_ip = '127.0.0.1'
 interfaces = os.networkInterfaces()
 server_ip = interfaces.eth0[0].address if interfaces.eth0?
-root_url = "http://#{server_ip}:3000"
+root_url = "http://#{server_ip}"
+root_url = root_url + ":#{process.env.COBALT_PORT}" unless process.env.COBALT_PORT == '80'
 
 # Templating language
 app.set('view engine', 'ejs')
