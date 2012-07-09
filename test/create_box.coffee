@@ -64,6 +64,7 @@ describe 'Creating a box:', ->
         froth.isDone().should.be.true
 
       it "doesn't return an error", ->
+        (_.isEqual (JSON.parse response.body), {status:"ok"}).should.be.true
         response.statusCode.should.equal 200
 
       it 'calls the useradd command with appropriate args', ->
