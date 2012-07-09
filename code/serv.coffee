@@ -76,17 +76,21 @@ app.post "/:box_name$", (req, res) ->
   new User({apikey: req.body.apikey}).save()
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     return res.send {error: "User not found" }, 404 unless user?
-    new Box({user: user._id, name: req.params.box_name}).save (err) ->
-      if err
-        console.log "Creating box: #{err} "
-        res.send {error: "Box already exists"} if err.code == 11000
-        res.send {error: "Unknown error"} unless err.code == 11000
+    Box.findOne {name: 'newdatabox'}, (err, box) ->
+      if box
+        res.send {error: "Box already exists"}
       else
-        exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
-          any_stderr = stderr is not ''
-          console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
-          res.send {error: "Sorry, couldn't create the box."} if err? or any_stderr
-          res.send {status: "ok"}
+        new Box({user: user._id, name: req.params.box_name}).save (err) ->
+          if err
+            console.log "Creating box: #{err} "
+            #res.send {error: "Box already exists"} if err.code == 11000
+            res.send {error: "Unknown error"} unless err.code == 11000
+          else
+            exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
+              any_stderr = stderr is not ''
+              console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
+              res.send {error: "Sorry, couldn't create the box."} if err? or any_stderr
+              res.send {status: "ok"}
 
 # Add an SSH key to a box
 app.post "/:box_name/sshkeys$", (req, res) ->
