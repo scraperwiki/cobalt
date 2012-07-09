@@ -73,6 +73,10 @@ app.get "/:box_name$", (req, res) ->
 # Create a box
 app.post "/:box_name$", (req, res) ->
   res.header('Content-Type', 'application/json')
+  re = /^[a-zA-Z0-9_+-]+$/
+  if not re.test req.params.box_name
+     return res.send {error:
+       "Box name should match the regular expression #{String(re)}"}, 404
   new User({apikey: req.body.apikey}).save()
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     return res.send {error: "User not found" }, 404 unless user?

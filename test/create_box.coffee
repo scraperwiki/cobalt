@@ -18,12 +18,15 @@ baseurl = 'http://127.0.0.1:3000/'
 describe 'Creating a box:', ->
   describe '( POST /<box_name> )', ->
     server = null
+    exec_stub = null
 
     before (done) ->
       server = require 'serv'
       mongoose.connect process.env['COBALT_DB']
       User.collection.drop()
       Box.collection.drop()
+      exec_stub = sinon.stub server, 'unix_user_add', (_a, cb) ->
+        cb null, null, null
       done()
 
     after (done) ->
@@ -40,12 +43,9 @@ describe 'Creating a box:', ->
     describe 'when the apikey is valid', ->
       froth = null
       response = null
-      exec_stub = null
       apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
       before (done) ->
-        exec_stub = sinon.stub server, 'unix_user_add', (_a, cb) ->
-          cb null, null, null
 
         froth = nock('https://scraperwiki.com')
         .get("/froth/check_key/#{apikey}")
@@ -89,10 +89,34 @@ describe 'Creating a box:', ->
           uri: baseurl + 'newdatabox'
           form:
             apikey: apikey
+
         request.post options, (err, resp, body) ->
           (_.isEqual (JSON.parse resp.body), {error:"Box already exists"}).should.be.true
           done()
 
+
+    describe 'when we use a naughty box name', ->
+      froth = null
+      response = null
+      exec_stub = null
+      apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
+
+      before (done) ->
+        froth = nock('https://scraperwiki.com')
+        .get("/froth/check_key/#{apikey}")
+        .reply 200, "200", { 'content-type': 'text/plain' }
+
+        options =
+          uri: baseurl + 'box;with silly characters!'
+          form:
+            apikey: apikey
+
+        request.post options, (err, resp, body) ->
+            response = resp
+            done()
+
+      it "returns an error", ->
+        response.statusCode.should.equal 404
 
 
     describe 'when the apikey is invalid', ->
