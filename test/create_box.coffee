@@ -85,21 +85,13 @@ describe 'Creating a box:', ->
         .get("/froth/check_key/#{apikey}")
         .reply 200, "200", { 'content-type': 'text/plain' }
 
-        Box.findOne {name: 'newdatabox'}, (err, box) ->
-          should.exist box
-          console.log box
-          options =
-            uri: baseurl + 'newdatabox'
-            form:
-              apikey: apikey
-          console.log options
-          request.post options, (err, resp, body) ->
-            console.log body
-            Box.findOne {name: 'newdatabox'}, (err, box) ->
-              should.exist box
-              console.log box
-              (_.isEqual (JSON.parse resp.body), {error:"Box already exists"}).should.be.true
-              done()
+        options =
+          uri: baseurl + 'newdatabox'
+          form:
+            apikey: apikey
+        request.post options, (err, resp, body) ->
+          (_.isEqual (JSON.parse resp.body), {error:"Box already exists"}).should.be.true
+          done()
 
 
 

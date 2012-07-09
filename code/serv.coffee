@@ -83,8 +83,7 @@ app.post "/:box_name$", (req, res) ->
         new Box({user: user._id, name: req.params.box_name}).save (err) ->
           if err
             console.log "Creating box: #{err} "
-            #res.send {error: "Box already exists"} if err.code == 11000
-            res.send {error: "Unknown error"} unless err.code == 11000
+            res.send {error: "Unknown error"}
           else
             exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
               any_stderr = stderr is not ''
