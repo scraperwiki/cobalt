@@ -85,7 +85,7 @@ app.post "/:box_name$", (req, res) ->
     User.findOne {apikey: req.body.apikey}, (err, user) ->
       return res.send {error: "User not found" }, 404 unless user?
       new Box({user: user._id, name: req.params.box_name}).save()
-      res.send '{"status": "ok"}'
+      res.send {"status": "ok"}
 
 # Add an SSH key to a box
 app.post "/:box_name/sshkeys$", (req, res) ->
@@ -111,7 +111,7 @@ app.post "/:box_name/sshkeys$", (req, res) ->
         fs.writeFileSync keys_path, keys.join '\n', 'utf8'
         fs.chmodSync keys_path, (parseInt '0600', 8)
         child_process.exec "chown #{box.name}: #{keys_path}" # insecure
-        res.send 'ok'
+        res.send {"status": "ok"}
 
 app.listen 3000
 
