@@ -80,6 +80,25 @@ describe 'Creating a box:', ->
           should.exist box
           done()
 
+      it 'errors when the box already exists', (done) ->
+        froth = nock('https://scraperwiki.com')
+        .get("/froth/check_key/#{apikey}")
+        .reply 200, "200", { 'content-type': 'text/plain' }
+
+        options =
+          uri: baseurl + 'newdatabox'
+          form:
+            apikey: apikey
+
+        request.post options, (err, resp, body) ->
+            console.log body
+            Box.findOne {name: 'newdatabox'}, (err, box) ->
+              should.exist box
+              done()
+            (_.isEqual (JSON.parse resp.body), {error:"Box already exists"}).should.be.true
+            done()
+
+
 
     describe 'when the apikey is invalid', ->
       before ->
