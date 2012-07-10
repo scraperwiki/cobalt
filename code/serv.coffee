@@ -121,7 +121,8 @@ app.post "/:box_name/sshkeys$", (req, res) ->
           "#{key.key}"
 
         fs.writeFileSync keys_path, keys.join '\n', 'utf8'
-        fs.chmodSync keys_path, (parseInt '0600', 8)
+        # Note: octal.  This is deliberate.
+        fs.chmodSync keys_path, 0o600
         child_process.exec "chown #{box.name}: #{keys_path}" # insecure
         res.send {"status": "ok"}
 
