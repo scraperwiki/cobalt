@@ -103,7 +103,10 @@ app.post "/:box_name/sshkeys$", (req, res) ->
 
   Box.findOne {name: req.params.box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
-    name =  SSHKey.extract_name req.body.sshkey
+    try
+      name = SSHKey.extract_name req.body.sshkey
+    catch TypeError
+      return res.send { error: "SSH Key format not valid" }, 400
     unless name then return res.send { error: "SSH Key has no name" }, 400
     key = new SSHKey
       box: box._id
