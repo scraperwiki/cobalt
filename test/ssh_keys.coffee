@@ -162,10 +162,23 @@ describe 'SSH keys:', ->
         froth = nock('https://scraperwiki.com')
         .get("/froth/check_key/#{apikey}")
         .reply 200, "200", { 'content-type': 'text/plain' }
+        froth = nock('https://scraperwiki.com')
+        .get("/froth/check_key/#{apikey}")
+        .reply 200, "200", { 'content-type': 'text/plain' }
 
 
       # do we need this now?
-      it 'returns an error if completely invalid'
+      it 'returns an error if completely invalid', (done) ->
+        invalid_sshkey = "foo bar baz"
+        options =
+          uri: URL
+          form:
+            apikey: apikey
+            sshkey: invalid_sshkey
+        request.post options, (err, resp, body) ->
+          (_.isEqual (JSON.parse resp.body),  {"error":"SSH Key format not valid"}).should.be.true
+          done()
+
 
       it 'returns an error if no name', (done) ->
         noname_sshkey =
