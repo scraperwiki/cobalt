@@ -103,7 +103,10 @@ app.post "/:box_name/sshkeys$", (req, res) ->
 
   Box.findOne {name: req.params.box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
-    name =  SSHKey.extract_name req.body.sshkey
+    try
+      name = SSHKey.extract_name req.body.sshkey
+    catch TypeError
+      return res.send { error: "SSH Key format not valid" }, 400
     unless name then return res.send { error: "SSH Key has no name" }, 400
     key = new SSHKey
       box: box._id
@@ -118,7 +121,8 @@ app.post "/:box_name/sshkeys$", (req, res) ->
           "#{key.key}"
 
         fs.writeFileSync keys_path, keys.join '\n', 'utf8'
-        fs.chmodSync keys_path, (parseInt '0600', 8)
+        # Note: octal.  This is deliberate.
+        fs.chmodSync keys_path, 0o600
         child_process.exec "chown #{box.name}: #{keys_path}" # insecure
         res.send {"status": "ok"}
 
