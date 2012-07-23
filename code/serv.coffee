@@ -61,7 +61,7 @@ app.post /.*/, check_api_key
 app.delete /.*/, check_api_key
 
 # Documentation for SSHing to a box.
-app.get "/:box_name$", (req, res) ->
+app.get "/:box_name/?", (req, res) ->
   res.header('Content-Type', 'application/json')
   Box.findOne {name: req.params.box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
@@ -72,7 +72,7 @@ app.get "/:box_name$", (req, res) ->
 
 
 # Create a box
-app.post "/:box_name$", (req, res) ->
+app.post "/:box_name/?", (req, res) ->
   res.header('Content-Type', 'application/json')
   re = /^[a-zA-Z0-9_+-]+$/
   if not re.test req.params.box_name
@@ -97,7 +97,7 @@ app.post "/:box_name$", (req, res) ->
               res.send {status: "ok"}
 
 # Add an SSH key to a box
-app.post "/:box_name/sshkeys$", (req, res) ->
+app.post "/:box_name/sshkeys/?", (req, res) ->
   res.header('Content-Type', 'application/json')
   unless req.body.sshkey? then return res.send { error: "SSH Key not specified" }, 400
 
