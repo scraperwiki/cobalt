@@ -133,6 +133,7 @@ exports.unix_user_add = (box_name, callback) ->
         cd /root/deployment-hooks && . lib/chroot_user &&
         create_user #{box_name} &&
         create_user_directories #{box_name} &&
+        furnish_box #{box_name} &&
         mkdir /opt/cobalt/etc/sshkeys/#{box_name}
         """
   # insecure - sanitise box_name
