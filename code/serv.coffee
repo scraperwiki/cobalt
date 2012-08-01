@@ -134,6 +134,7 @@ exports.unix_user_add = (box_name, callback) ->
         create_user #{box_name} &&
         create_user_directories #{box_name} &&
         furnish_box #{box_name} &&
+        seal_box #{box_name} &&
         mkdir /opt/cobalt/etc/sshkeys/#{box_name}
         """
   # insecure - sanitise box_name
