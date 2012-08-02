@@ -81,7 +81,7 @@ app.post "/:box_name/?", (req, res) ->
   new User({apikey: req.body.apikey}).save()
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     return res.send {error: "User not found" }, 404 unless user?
-    Box.findOne {name: 'newdatabox'}, (err, box) ->
+    Box.findOne {name: req.params.box_name}, (err, box) ->
       if box
         res.send {error: "Box already exists"}
       else
