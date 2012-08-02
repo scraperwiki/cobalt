@@ -97,7 +97,7 @@ app.post "/:box_name/?", (req, res) ->
             exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
               any_stderr = stderr is not ''
               console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
-              res.send {error: "Sorry, couldn't create the box."} if err? or any_stderr
+              res.send {error: "Unable to create box"} if err? or any_stderr
               res.send {status: "ok"}
 
 # Add an SSH key to a box
@@ -107,28 +107,31 @@ app.post "/:box_name/sshkeys/?", (req, res) ->
 
   Box.findOne {name: req.params.box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
-    try
-      name = SSHKey.extract_name req.body.sshkey
-    catch TypeError
-      return res.send { error: "SSH Key format not valid" }, 400
-    unless name then return res.send { error: "SSH Key has no name" }, 400
-    key = new SSHKey
-      box: box._id
-      name: name
-      key: req.body.sshkey
+    User.findOne {apikey: req.body.apikey}, (err, user) ->
+      return res.send { error: "Unauthorised" } unless user?
+      return res.send { error: "Unauthorised" }, 403 unless user._id.toString() == box.user.toString()
+      try
+        name = SSHKey.extract_name req.body.sshkey
+      catch TypeError
+        return res.send { error: "SSH Key format not valid" }, 400
+      unless name then return res.send { error: "SSH Key has no name" }, 400
+      key = new SSHKey
+        box: box._id
+        name: name
+        key: req.body.sshkey
 
-    key.save ->
-      SSHKey.find {box: box._id}, (err, sshkeys) ->
-        keys_path = "/opt/cobalt/etc/sshkeys/#{box.name}/authorized_keys"
+      key.save ->
+        SSHKey.find {box: box._id}, (err, sshkeys) ->
+          keys_path = "/opt/cobalt/etc/sshkeys/#{box.name}/authorized_keys"
 
-        keys = for key in sshkeys
-          "#{key.key}"
+          keys = for key in sshkeys
+            "#{key.key}"
 
-        fs.writeFileSync keys_path, keys.join '\n', 'utf8'
-        # Note: octal.  This is deliberate.
-        fs.chmodSync keys_path, 0o600
-        child_process.exec "chown #{box.name}: #{keys_path}" # insecure
-        res.send {"status": "ok"}
+          fs.writeFileSync keys_path, keys.join '\n', 'utf8'
+          # Note: octal.  This is deliberate.
+          fs.chmodSync keys_path, 0o600
+          child_process.exec "chown #{box.name}: #{keys_path}" # insecure
+          res.send {"status": "ok"}
 
 app.listen process.env.COBALT_PORT
 
