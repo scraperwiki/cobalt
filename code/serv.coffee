@@ -39,9 +39,25 @@ root_url = root_url + ":#{process.env.COBALT_PORT}" unless process.env.COBALT_PO
 # Templating language
 app.set('view engine', 'ejs')
 
+# GET REQUESTS
+# These should all be idempotent, i.e. make no changes to the server.
+
 app.get "/", (req, res) ->
   res.header('Content-Type', 'application/json')
   res.render('index', {rooturl: root_url})
+
+# Documentation for SSHing to a box.
+app.get "/:box_name/?", (req, res) ->
+  res.header('Content-Type', 'application/json')
+  Box.findOne {name: req.params.box_name}, (err, box) ->
+    return res.send { error: "Box not found" }, 404 unless box?
+    res.render 'box',
+      box_name: req.params.box_name
+      rooturl: root_url
+      server_ip: server_ip
+
+# POST REQUESTS
+# These will likely result in changes to the mongodb database
 
 # TODO: should this be middleware?
 check_api_key = (req, res, next) ->
@@ -56,20 +72,8 @@ check_api_key = (req, res, next) ->
   else
     res.send {error: "No API key supplied"}, 403
 
-# Check API key for all POSTs 
+# Check API key for all POSTs
 app.post /.*/, check_api_key
-app.delete /.*/, check_api_key
-
-# Documentation for SSHing to a box.
-app.get "/:box_name/?", (req, res) ->
-  res.header('Content-Type', 'application/json')
-  Box.findOne {name: req.params.box_name}, (err, box) ->
-    return res.send { error: "Box not found" }, 404 unless box?
-    res.render 'box',
-      box_name: req.params.box_name
-      rooturl: root_url
-      server_ip: server_ip
-
 
 # Create a box
 app.post "/:box_name/?", (req, res) ->
