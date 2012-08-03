@@ -46,7 +46,7 @@ describe 'SSH keys:', ->
       mongoose.disconnect ->
         done()
 
-    it 'gives an error when adding ssh keys without an API key', (done) ->
+    it 'returns an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
         resp.statusCode.should.equal 403
         (_.isEqual (JSON.parse resp.body), {"error":"No API key supplied"}).should.be.true
@@ -94,7 +94,7 @@ describe 'SSH keys:', ->
         it "overwrites the box's authorized_keys file with all ssh keys", ->
           write_stub.calledOnce.should.be.true
           chmod_stub.calledOnce.should.be.true
-      
+
     describe 'when the apikey is invalid', ->
       before ->
         froth = nock('https://scraperwiki.com')
@@ -109,9 +109,9 @@ describe 'SSH keys:', ->
             sshkey: 'blah'
 
         request.post options, (err, resp, body) ->
-            resp.statusCode.should.equal 403
-            (_.isEqual (JSON.parse resp.body), {"error":"Unauthorised"}).should.be.true
-            done()
+          resp.statusCode.should.equal 403
+          (_.isEqual (JSON.parse resp.body), {"error":"Unauthorised"}).should.be.true
+          done()
 
     describe "when the box doesn't exist", ->
       response = null
