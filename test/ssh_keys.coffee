@@ -113,6 +113,27 @@ describe 'SSH keys:', ->
           (_.isEqual (JSON.parse resp.body), {"error":"Unauthorised"}).should.be.true
           done()
 
+    describe 'when the apikey does not belong to the box creator', ->
+      before ->
+        apikey2 = 'otheruserapikey'
+        new User({apikey: apikey2}).save()
+
+        froth = nock('https://scraperwiki.com')
+        .get("/froth/check_key/otheruserapikey")
+        .reply 200, "200", { 'content-type': 'text/plain' }
+
+      it 'returns an error', (done) ->
+        options =
+          uri: URL
+          form:
+            apikey: 'otheruserapikey'
+            sshkey: 'blah'
+
+        request.post options, (err, resp, body) ->
+          resp.statusCode.should.equal 403
+          (_.isEqual (JSON.parse resp.body), {"error":"Unauthorised"}).should.be.true
+          done()
+
     describe "when the box doesn't exist", ->
       response = null
       before (done) ->
