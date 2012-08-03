@@ -60,14 +60,16 @@ app.get "/:box_name/?", (req, res) ->
 # These should make changes somewhere, likely to the mongodb database
 
 # TODO: should this be middleware?
+# Check if scraperwiki currently recognises the api key
+# If fails, check if that apikey has been valid in the past for box creation
 check_api_key = (req, res, next) ->
   res.header('Content-Type', 'application/json')
   if req.body.apikey?
     url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
     request.get url, (err, resp, body) ->
-      if resp.statusCode is 200
-        next()
-      else
+      return next() if resp.statusCode is 200
+      User.findOne {apikey: req.body.apikey}, (err, user) ->
+        return next() if user?
         res.send {error: "Unauthorised"}, 403
   else
     res.send {error: "No API key supplied"}, 403
@@ -80,8 +82,8 @@ app.post "/:box_name/?", (req, res) ->
   res.header('Content-Type', 'application/json')
   re = /^[a-zA-Z0-9_+-]+$/
   if not re.test req.params.box_name
-     return res.send {error:
-       "Box name should match the regular expression #{String(re)}"}, 404
+    return res.send {error:
+      "Box name should match the regular expression #{String(re)}"}, 404
   new User({apikey: req.body.apikey}).save()
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     return res.send {error: "User not found" }, 404 unless user?
