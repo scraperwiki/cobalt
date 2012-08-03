@@ -57,7 +57,7 @@ app.get "/:box_name/?", (req, res) ->
       server_ip: server_ip
 
 # POST REQUESTS
-# These will likely result in changes to the mongodb database
+# These should make changes somewhere, likely to the mongodb database
 
 # TODO: should this be middleware?
 check_api_key = (req, res, next) ->
@@ -108,7 +108,7 @@ app.post "/:box_name/sshkeys/?", (req, res) ->
   Box.findOne {name: req.params.box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
     User.findOne {apikey: req.body.apikey}, (err, user) ->
-      return res.send { error: "Unauthorised" } unless user?
+      return res.send { error: "Unauthorised" }, 403 unless user?
       return res.send { error: "Unauthorised" }, 403 unless user._id.toString() == box.user.toString()
       try
         name = SSHKey.extract_name req.body.sshkey
