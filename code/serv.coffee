@@ -140,6 +140,7 @@ app.listen process.env.COBALT_PORT
 exports.unix_user_add = (box_name, callback) ->
   cmd = """
         cd /root/deployment-hooks && . lib/chroot_user &&
+        export HOOKS_HOME=$(pwd) &&
         create_user #{box_name} &&
         create_user_directories #{box_name} &&
         furnish_box #{box_name} &&
