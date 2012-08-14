@@ -28,10 +28,6 @@ describe 'Creating a box:', ->
         cb null, null, null
       done()
 
-    after (done) ->
-      mongoose.disconnect ->
-        done()
-
     it 'gives an error when creating a databox without a key', (done) ->
       u = baseurl + 'newdatabox'
       request.post {url:u}, (err, resp, body) ->

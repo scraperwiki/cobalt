@@ -7,6 +7,7 @@ nock   = require 'nock'
 sinon  = require 'sinon'
 
 mongoose = require 'mongoose'
+server = require 'serv'
 User = require 'models/user'
 Box = require 'models/box'
 
@@ -18,11 +19,6 @@ BOX = 'olddatabox'
 
 describe 'Box documentation', ->
   describe '( GET / )', ->
-    server = null
-
-    before (done) ->
-      server = require 'serv'
-      done()
 
     it 'documents how to create a box', (done) ->
       u = baseurl
@@ -34,20 +30,15 @@ describe 'Box documentation', ->
         done()
 
   describe '( GET /<box_name> )', ->
-    server = null
 
     before (done) ->
-      server = require 'serv'
       User.collection.drop()
       Box.collection.drop()
 
       new User({apikey: APIKEY}).save()
       User.findOne {apikey: APIKEY}, (err, user) ->
+        console.log err if err
         new Box({user: user._id, name: BOX}).save()
-        done()
-
-    after (done) ->
-      mongoose.disconnect ->
         done()
 
     it 'documents how to SSH into a box', (done) ->

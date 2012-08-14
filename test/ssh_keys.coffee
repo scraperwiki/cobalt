@@ -10,7 +10,6 @@ fs     = require 'fs'
 child_process = require 'child_process'
 _ = require 'underscore'
 
-mongoose = require 'mongoose'
 User = require 'models/user'
 Box = require 'models/box'
 SSHKey = require 'models/ssh_key'
@@ -22,12 +21,14 @@ apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 describe 'SSH keys:', ->
   describe '( POST /<box_name>/sshkeys )', ->
     server = null
+    mongoose = null
     write_stub = null
     chmod_stub = null
     URL = "#{BASE_URL}newdatabox/sshkeys"
 
     before (done) ->
       server = require 'serv'
+      mongoose = require 'mongoose'
       # TODO: icky, we want fixtures or mocking
       User.collection.drop()
       Box.collection.drop()
@@ -40,10 +41,6 @@ describe 'SSH keys:', ->
       write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
       chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", (parseInt '0600', 8)
       chown_stub = sinon.stub(child_process, 'exec').withArgs "chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
-
-    after (done) ->
-      mongoose.disconnect ->
-        done()
 
     it 'returns an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
