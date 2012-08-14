@@ -70,9 +70,9 @@ check_api_key = (req, res, next) ->
       return next() if resp.statusCode is 200
       User.findOne {apikey: req.body.apikey}, (err, user) ->
         return next() if user?
-        res.send {error: "Unauthorised"}, 403
+        return res.send {error: "Unauthorised"}, 403
   else
-    res.send {error: "No API key supplied"}, 403
+    return res.send {error: "No API key supplied"}, 403
 
 # Check API key for all POSTs
 app.post /.*/, check_api_key
@@ -89,18 +89,18 @@ app.post "/:box_name/?", (req, res) ->
     return res.send {error: "User not found" }, 404 unless user?
     Box.findOne {name: req.params.box_name}, (err, box) ->
       if box
-        res.send {error: "Box already exists"}
+        return res.send {error: "Box already exists"}
       else
         new Box({user: user._id, name: req.params.box_name}).save (err) ->
           if err
             console.log "Creating box: #{err} "
-            res.send {error: "Unknown error"}
+            return res.send {error: "Unknown error"}
           else
             exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
               any_stderr = stderr is not ''
               console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
-              res.send {error: "Unable to create box"} if err? or any_stderr
-              res.send {status: "ok"}
+              return res.send {error: "Unable to create box"} if err? or any_stderr
+              return res.send {status: "ok"}
 
 # Add an SSH key to a box
 app.post "/:box_name/sshkeys/?", (req, res) ->
@@ -133,7 +133,7 @@ app.post "/:box_name/sshkeys/?", (req, res) ->
           # Note: octal.  This is deliberate.
           fs.chmodSync keys_path, 0o600
           child_process.exec "chown #{box.name}: #{keys_path}" # insecure
-          res.send {"status": "ok"}
+          return res.send {"status": "ok"}
 
 app.listen process.env.COBALT_PORT
 
