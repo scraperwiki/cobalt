@@ -22,7 +22,6 @@ describe 'Creating a box:', ->
 
     before (done) ->
       server = require 'serv'
-      mongoose.connect process.env['COBALT_DB']
       User.collection.drop()
       Box.collection.drop()
       exec_stub = sinon.stub server, 'unix_user_add', (_a, cb) ->

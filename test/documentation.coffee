@@ -38,7 +38,6 @@ describe 'Box documentation', ->
 
     before (done) ->
       server = require 'serv'
-      mongoose.connect process.env['COBALT_DB']
       User.collection.drop()
       Box.collection.drop()
 
