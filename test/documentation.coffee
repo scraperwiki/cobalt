@@ -27,6 +27,7 @@ describe 'Box documentation', ->
         resp.body.should.include 'reate'
         resp.body.should.include 'API'
         resp.body.should.include 'curl'
+        JSON.parse resp.body
         done()
 
   describe '( GET /<box_name> )', ->
@@ -48,5 +49,6 @@ describe 'Box documentation', ->
         resp.body.should.include 'ssh'
         resp.body.should.include 'curl'
         resp.body.should.include '@'
+        JSON.parse resp.body
         done()
 
