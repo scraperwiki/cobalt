@@ -39,11 +39,6 @@ root_url = root_url + ":#{process.env.COBALT_PORT}" unless process.env.COBALT_PO
 # Templating language
 app.set('view engine', 'ejs')
 
-# Allow Cross Origin Resource Sharing for all requests
-app.all '/*', (req, res, next) ->
-  res.header("Access-Control-Allow-Origin", "*")
-  next()
-
 # GET REQUESTS
 # These should all be idempotent, i.e. make no changes to the server.
 
