@@ -87,11 +87,13 @@ describe "scraperwiki.json settings API", ->
           form:
             apikey: apikey
 
-      write_stub = sinon.stub(fs, 'writeFileSync').withArgs("/home/newdatabox/scraperwiki.json")
+      write_stub = sinon.stub(fs, 'writeFile')
+        .withArgs('/home/newdatabox/scraperwiki.json')
+        .callsArgWith(3, null)
 
     after ->
       nock.cleanAll()
-      fs.writeFileSync.restore()
+      fs.writeFile.restore()
 
     describe 'when the JSON is ok', ->
       before (done) ->

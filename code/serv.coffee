@@ -154,9 +154,13 @@ app.post "/:box_name/settings/?", (req, res) ->
     json = JSON.parse req.body.data
   catch e
     return res.send { error: "Invalid JSON" }, 400
-  fs.writeFileSync "/home/#{req.params.box_name}/scraperwiki.json",
-    JSON.stringify json, 'utf8'
-  return res.send { message: "ok" }, 200
+  fs.writeFile "/home/#{req.params.box_name}/scraperwiki.json",
+    (JSON.stringify json), 'utf8', (err) ->
+      if !err
+        return res.send { message: "ok" }, 200
+      else
+        return res.send { error: "Couldn't write scraperwiki.json" } , 400
+
 
 
 app.listen process.env.COBALT_PORT
