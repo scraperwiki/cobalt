@@ -75,8 +75,13 @@ app.get "/:box_name/?", (req, res) ->
 # Get scraperwiki.json settings file
 app.get "/:box_name/settings/?", check_api_key
 app.get "/:box_name/settings/?", (req, res) ->
-  return res.send fs.readFileSync \
-    "/home/#{req.params.box_name}/scraperwiki.json"
+  fs.readFile "/home/#{req.params.box_name}/scraperwiki.json",
+    'utf8',
+    (err, data) ->
+      if !err
+        res.send data
+      else
+        res.send {error:"scraperwiki.json not found"}, 404
 
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database

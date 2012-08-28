@@ -30,13 +30,15 @@ describe "scraperwiki.json settings API", ->
           apikey: apikey
 
     before ->
-      fixture_buffer = fs.readFileSync "test/fixtures/scraperwiki.json"
+      fixture_buffer = fs.readFileSync "test/fixtures/scraperwiki.json", 'utf8'
 
-      read_stub = sinon.stub(fs, 'readFileSync').withArgs("/home/newdatabox/scraperwiki.json").returns fixture_buffer
+      read_stub = sinon.stub(fs, 'readFile')
+        .withArgs('/home/newdatabox/scraperwiki.json')
+        .callsArgWith(2, null, fixture_buffer)
 
     after ->
       nock.cleanAll()
-      fs.readFileSync.restore()
+      fs.readFile.restore()
 
     beforeEach ->
       nock('https://scraperwiki.com')
