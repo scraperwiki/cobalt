@@ -155,7 +155,7 @@ app.post "/:box_name/settings/?", (req, res) ->
   catch e
     return res.send { error: "Invalid JSON" }, 400
   fs.writeFile "/home/#{req.params.box_name}/scraperwiki.json",
-    (JSON.stringify json), 'utf8', (err) ->
+    (JSON.stringify json, null, 2), 'utf8', (err) ->
       if !err
         return res.send { message: "ok" }, 200
       else
