@@ -39,6 +39,22 @@ root_url = root_url + ":#{process.env.COBALT_PORT}" unless process.env.COBALT_PO
 # Templating language
 app.set('view engine', 'ejs')
 
+# TODO: should this be middleware?
+# Check if scraperwiki currently recognises the api key
+# If fails, check if that apikey has been valid in the past for box creation
+check_api_key = (req, res, next) ->
+  res.header('Content-Type', 'application/json')
+  if req.body.apikey?
+    url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
+    request.get url, (err, resp, body) ->
+      return next() if resp.statusCode is 200
+      User.findOne {apikey: req.body.apikey}, (err, user) ->
+        return next() if user?
+        return res.send {error: "Unauthorised"}, 403
+  else
+    return res.send {error: "No API key supplied"}, 403
+
+
 # GET REQUESTS
 # These should all be idempotent, i.e. make no changes to the server.
 
@@ -56,23 +72,14 @@ app.get "/:box_name/?", (req, res) ->
       rooturl: root_url
       server_ip: server_ip
 
+# Get scraperwiki.json settings file
+app.get "/:box_name/settings/?", check_api_key
+app.get "/:box_name/settings/?", (req, res) ->
+  return res.send fs.readFileSync \
+    "/home/#{req.params.box_name}/scraperwiki.json"
+
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
-
-# TODO: should this be middleware?
-# Check if scraperwiki currently recognises the api key
-# If fails, check if that apikey has been valid in the past for box creation
-check_api_key = (req, res, next) ->
-  res.header('Content-Type', 'application/json')
-  if req.body.apikey?
-    url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
-    request.get url, (err, resp, body) ->
-      return next() if resp.statusCode is 200
-      User.findOne {apikey: req.body.apikey}, (err, user) ->
-        return next() if user?
-        return res.send {error: "Unauthorised"}, 403
-  else
-    return res.send {error: "No API key supplied"}, 403
 
 # Check API key for all POSTs
 app.post /.*/, check_api_key
