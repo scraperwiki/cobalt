@@ -1,13 +1,18 @@
 # basic.coffee
 
+child_process = require 'child_process'
+fs     = require 'fs'
 http = require 'http'
+
+# https://github.com/flatiron/nock
+nock   = require 'nock'
 # https://github.com/mikeal/request
 request = require 'request'
+# https://github.com/visionmedia/should.js/
 should = require 'should'
-nock   = require 'nock'
+# http://sinonjs.org/docs/
 sinon  = require 'sinon'
-fs     = require 'fs'
-child_process = require 'child_process'
+# http://underscorejs.org/
 _ = require 'underscore'
 
 User = require 'models/user'
