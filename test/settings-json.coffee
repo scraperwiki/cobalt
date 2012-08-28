@@ -36,6 +36,7 @@ describe "scraperwiki.json settings API", ->
 
     after ->
       nock.cleanAll()
+      fs.readFileSync.restore()
 
     beforeEach ->
       nock('https://scraperwiki.com')
@@ -73,6 +74,50 @@ describe "scraperwiki.json settings API", ->
         settings.database.should.equal 'sqlite.db'
 
   describe "POST /<box_name>/settings", ->
-    it "gives errors for bad JSON"
-    it "succeeds with good JSON"
-    it "saves the scraperwiki.json"
+    response = null
+    write_stub = null
+    options = null
+    apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
+
+    before ->
+      options =
+          uri: baseurl + 'newdatabox/settings/'
+          form:
+            apikey: apikey
+
+      write_stub = sinon.stub(fs, 'writeFileSync').withArgs("/home/newdatabox/scraperwiki.json")
+
+    after ->
+      nock.cleanAll()
+      fs.writeFileSync.restore()
+
+    describe 'when the JSON is ok', ->
+      before (done) ->
+        nock('https://scraperwiki.com')
+        .get("/froth/check_key/#{apikey}")
+        .reply 200, "200", { 'content-type': 'text/plain' }
+
+        options.form.data = JSON.stringify {database: 'sqlite.db'}
+        request.post options, (err, resp, body) ->
+          response = resp
+          done()
+
+      it "returns ok", ->
+        response.statusCode.should.equal 200
+
+      it "saves the scraperwiki.json", ->
+        write_stub.calledOnce.should.be.true
+
+    describe 'when the JSON invalid', ->
+      before (done) ->
+        nock('https://scraperwiki.com')
+        .get("/froth/check_key/#{apikey}")
+        .reply 200, "200", { 'content-type': 'text/plain' }
+
+        options.form.data = "#why no comments? {asfsdf:'sdfsdf'}"
+        request.post options, (err, resp, body) ->
+          response = resp
+          done()
+
+      it "returns an error", ->
+        response.statusCode.should.equal 400

@@ -142,6 +142,18 @@ app.post "/:box_name/sshkeys/?", (req, res) ->
           child_process.exec "chown #{box.name}: #{keys_path}" # insecure
           return res.send {"status": "ok"}
 
+# Set scraperwiki.json settings file
+app.post "/:box_name/settings/?", (req, res) ->
+  json = null
+  try
+    json = JSON.parse req.body.data
+  catch e
+    return res.send { error: "Invalid JSON" }, 400
+  fs.writeFileSync "/home/#{req.params.box_name}/scraperwiki.json",
+    JSON.stringify json, 'utf8'
+  return res.send { message: "ok" }, 200
+
+
 app.listen process.env.COBALT_PORT
 
 exports.unix_user_add = (box_name, callback) ->

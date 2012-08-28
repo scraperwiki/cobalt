@@ -48,6 +48,9 @@ describe 'SSH keys:', ->
         (_.isEqual (JSON.parse resp.body), {"error":"No API key supplied"}).should.be.true
         done()
 
+    after ->
+      fs.writeFileSync.restore()
+
     describe 'when the apikey is valid and box exists', ->
       froth = null
       response = null
