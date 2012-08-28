@@ -44,11 +44,12 @@ app.set('view engine', 'ejs')
 # If fails, check if that apikey has been valid in the past for box creation
 check_api_key = (req, res, next) ->
   res.header('Content-Type', 'application/json')
-  if req.body.apikey?
-    url = "https://scraperwiki.com/froth/check_key/#{req.body.apikey}"
+  apikey = req.body.apikey or req.query.apikey
+  if apikey?
+    url = "https://scraperwiki.com/froth/check_key/#{apikey}"
     request.get url, (err, resp, body) ->
       return next() if resp.statusCode is 200
-      User.findOne {apikey: req.body.apikey}, (err, user) ->
+      User.findOne {apikey: apikey}, (err, user) ->
         return next() if user?
         return res.send {error: "Unauthorised"}, 403
   else

@@ -26,7 +26,7 @@ describe "scraperwiki.json settings API", ->
     apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
     options =
         uri: baseurl + 'newdatabox/settings/'
-        form:
+        qs:
           apikey: apikey
 
     before ->
@@ -50,12 +50,11 @@ describe "scraperwiki.json settings API", ->
 
     it "errors if no API key specified", (done) ->
       opt = _.clone options
-      opt.form = _.clone opt.form
-      opt.form.apikey = null
+      opt.qs = _.clone opt.qs
+      opt.qs.apikey = null
       request.get opt, (err, response, body) ->
         response.statusCode.should.equal 403
-        (_.isEqual (JSON.parse response.body),
-          {error:"Unauthorised"}).should.be.true
+        should.exist (JSON.parse response.body).error
         done()
 
     describe "when a valid API key is supplied", ->
