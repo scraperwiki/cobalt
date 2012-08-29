@@ -91,25 +91,26 @@ app.get "/:box_name/settings/?", (req, res) ->
 app.post /.*/, check_api_key
 
 # Create a box
-app.post "/:box_name/?", (req, res) ->
+app.post "/:org/:project/?", (req, res) ->
   res.header('Content-Type', 'application/json')
-  re = /^[a-zA-Z0-9_+-]+$/
-  if not re.test req.params.box_name
+  box_name = req.params.org + '/' + req.params.project
+  re = /^[a-zA-Z0-9_+-]+\/[a-zA-Z0-9_+-]+$/
+  if not re.test box_name
     return res.send {error:
       "Box name should match the regular expression #{String(re)}"}, 404
   new User({apikey: req.body.apikey}).save()
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     return res.send {error: "User not found" }, 404 unless user?
-    Box.findOne {name: req.params.box_name}, (err, box) ->
+    Box.findOne {name: box_name}, (err, box) ->
       if box
         return res.send {error: "Box already exists"}
       else
-        new Box({user: user._id, name: req.params.box_name}).save (err) ->
+        new Box({user: user._id, name: box_name}).save (err) ->
           if err
             console.log "Creating box: #{err} "
             return res.send {error: "Unknown error"}
           else
-            exports.unix_user_add req.params.box_name, (err, stdout, stderr) ->
+            exports.unix_user_add box_name, (err, stdout, stderr) ->
               any_stderr = stderr is not ''
               console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
               return res.send {error: "Unable to create box"} if err? or any_stderr

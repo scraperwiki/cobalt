@@ -16,7 +16,7 @@ httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000/'
 
 describe 'Creating a box:', ->
-  describe '( POST /<box_name> )', ->
+  describe '( POST /<org>/<project> )', ->
     server = null
     exec_stub = null
 
@@ -24,8 +24,8 @@ describe 'Creating a box:', ->
       server = require 'serv'
       User.collection.drop()
       Box.collection.drop()
-      exec_stub = sinon.stub server, 'unix_user_add', (_a, cb) ->
-        cb null, null, null
+      exec_stub = sinon.stub server, 'unix_user_add', (_a, callback) ->
+        callback null, null, null
       done()
 
     it 'gives an error when creating a databox without a key', (done) ->
@@ -44,10 +44,11 @@ describe 'Creating a box:', ->
 
         froth = nock('https://scraperwiki.com')
         .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        .reply 200, (JSON.stringify { org: 'kiteorg'}),
+          { 'content-type': 'text/plain' }
 
         options =
-          uri: baseurl + 'newdatabox'
+          uri: baseurl + 'kiteorg/newdatabox'
           form:
             apikey: apikey
 
@@ -64,7 +65,7 @@ describe 'Creating a box:', ->
 
       it 'calls the useradd command with appropriate args', ->
         exec_stub.called.should.be.true
-        exec_stub.calledWith 'newdatabox'
+        exec_stub.calledWith 'kiteorg/newdatabox'
 
       it 'adds the user to the database', (done) ->
         User.findOne {apikey: apikey}, (err, user) ->
@@ -72,17 +73,18 @@ describe 'Creating a box:', ->
           done()
 
       it 'adds the box to the database', (done) ->
-        Box.findOne {name: 'newdatabox'}, (err, box) ->
+        Box.findOne {name: 'kiteorg/newdatabox'}, (err, box) ->
           should.exist box
           done()
 
       it 'errors when the box already exists', (done) ->
         froth = nock('https://scraperwiki.com')
         .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        .reply 200, (JSON.stringify { org: 'kiteorg'}),
+          { 'content-type': 'text/plain' }
 
         options =
-          uri: baseurl + 'newdatabox'
+          uri: baseurl + 'kiteorg/newdatabox'
           form:
             apikey: apikey
 
@@ -100,10 +102,11 @@ describe 'Creating a box:', ->
       before (done) ->
         froth = nock('https://scraperwiki.com')
         .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        .reply 200, (JSON.stringify { org: 'kiteorg'}),
+          { 'content-type': 'text/plain' }
 
         options =
-          uri: baseurl + 'box;with silly characters!'
+          uri: baseurl + 'kiteorg/box;with silly characters!'
           form:
             apikey: apikey
 
@@ -119,16 +122,17 @@ describe 'Creating a box:', ->
       before ->
         froth = nock('https://scraperwiki.com')
         .get("/froth/check_key/junk")
-        .reply 403, "403", { 'content-type': 'text/plain' }
+        .reply 403, (JSON.stringify { error: 'Forbidden'}),
+          { 'content-type': 'text/plain' }
 
       it 'returns an error', (done) ->
         options =
-          uri: baseurl + 'newdatabox'
+          uri: baseurl + 'kiteorg/newdatabox'
           form:
             apikey: 'junk'
 
         request.post options, (err, resp, body) ->
-            resp.statusCode.should.equal 403
-            (_.isEqual (JSON.parse resp.body), {'error':'Unauthorised'}).should.be.true
-            done()
+          resp.statusCode.should.equal 403
+          (_.isEqual (JSON.parse resp.body), {'error':'Unauthorised'}).should.be.true
+          done()
 
