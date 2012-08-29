@@ -6,13 +6,15 @@ a sandboxed environment.
 
 ### Dependencies ###
 
-3 git repositories are needed (cobalt, lithium, swops-secret).
+5 git repositories are needed (cobalt, lithium, swops, swops-secret, deployment-hooks).
 They should be cloned side-by-side.  Pick a new directory if you want.
 
     git clone git@bitbucket.org:ScraperWiki/swops-secret.git
     git clone git@github.com:scraperwiki/lithium.git
     git clone git@github.com:scraperwiki/cobalt.git
-    
+    git clone git@github.com:scraperwiki/swops.git
+    git clone git@github.com:scraperwiki/deployment-hooks.git
+
 Lithium and Cobalt both have their own dependencies for Node
 packages. You'll need to install them when you first clone, and then
 every now and then as the dependencies change.  The *first* time
@@ -28,7 +30,7 @@ Running this when you don't need to is fine – it doesn't take very long.
 
 Don't forget to sync your repositories:
 
-    for d in lithium cobalt swops-secret; do ( cd $d; git pull ) done
+    for d in lithium cobalt swops swops-secret deployment-hooks; do ( cd $d; git pull ) done
 
 (you need to 'npm install' every now and then too, but you won't
 generally need to use the '-f' option (see above))
@@ -40,6 +42,12 @@ You need to set up the environment and so on:
     cd lithium
     . ../swops-secret/keys.sh
     . ./activate
+    
+### Running Cobalt Tests ###
+
+    cd cobalt
+    . ./activate
+    mocha
 
 ### Using Lithium ###
 
