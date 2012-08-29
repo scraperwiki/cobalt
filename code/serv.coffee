@@ -74,9 +74,10 @@ app.get "/:box_name/?", (req, res) ->
       server_ip: server_ip
 
 # Get scraperwiki.json settings file
-app.get "/:box_name/settings/?", check_api_key
-app.get "/:box_name/settings/?", (req, res) ->
-  fs.readFile "/home/#{req.params.box_name}/scraperwiki.json",
+app.get "/:org/:project/settings/?", check_api_key
+app.get "/:org/:project/settings/?", (req, res) ->
+  box_name = req.params.org + '/' + req.params.project
+  fs.readFile "/home/#{box_name}/scraperwiki.json",
     'utf8',
     (err, data) ->
       if !err
@@ -117,11 +118,13 @@ app.post "/:org/:project/?", (req, res) ->
               return res.send {status: "ok"}
 
 # Add an SSH key to a box
-app.post "/:box_name/sshkeys/?", (req, res) ->
+app.post "/:org/:project/sshkeys/?", (req, res) ->
+  box_name = req.params.org + '/' + req.params.project
+
   res.header('Content-Type', 'application/json')
   unless req.body.sshkey? then return res.send { error: "SSH Key not specified" }, 400
 
-  Box.findOne {name: req.params.box_name}, (err, box) ->
+  Box.findOne {name: box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
     User.findOne {apikey: req.body.apikey}, (err, user) ->
       return res.send { error: "Unauthorised" }, 403 unless user?
@@ -150,13 +153,15 @@ app.post "/:box_name/sshkeys/?", (req, res) ->
           return res.send {"status": "ok"}
 
 # Set scraperwiki.json settings file
-app.post "/:box_name/settings/?", (req, res) ->
+app.post "/:org/:project/settings/?", (req, res) ->
+  box_name = req.params.org + '/' + req.params.project
+
   json = null
   try
     json = JSON.parse req.body.data
   catch e
     return res.send { error: "Invalid JSON" }, 400
-  fs.writeFile "/home/#{req.params.box_name}/scraperwiki.json",
+  fs.writeFile "/home/#{box_name}/scraperwiki.json",
     (JSON.stringify json, null, 2), 'utf8', (err) ->
       if !err
         return res.send { message: "ok" }, 200

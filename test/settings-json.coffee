@@ -20,12 +20,12 @@ describe "scraperwiki.json settings API", ->
   Box.collection.drop()
 
   # should we stub the readfile to return a fixture?
-  describe "GET /<box_name>/settings", ->
+  describe "GET /<org>/<project>/settings", ->
     froth = null
     read_stub = null
     apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
     options =
-        uri: baseurl + 'newdatabox/settings/'
+        uri: baseurl + 'kiteorg/newdatabox/settings/'
         qs:
           apikey: apikey
 
@@ -33,7 +33,7 @@ describe "scraperwiki.json settings API", ->
       fixture_buffer = fs.readFileSync "test/fixtures/scraperwiki.json", 'utf8'
 
       read_stub = sinon.stub(fs, 'readFile')
-        .withArgs('/home/newdatabox/scraperwiki.json')
+        .withArgs('/home/kiteorg/newdatabox/scraperwiki.json')
         .callsArgWith(2, null, fixture_buffer)
 
     after ->
@@ -74,7 +74,7 @@ describe "scraperwiki.json settings API", ->
         should.exist settings
         settings.database.should.equal 'sqlite.db'
 
-  describe "POST /<box_name>/settings", ->
+  describe "POST /<org>/<project>/settings", ->
     response = null
     write_stub = null
     options = null
@@ -82,12 +82,12 @@ describe "scraperwiki.json settings API", ->
 
     before ->
       options =
-          uri: baseurl + 'newdatabox/settings/'
+          uri: baseurl + 'kiteorg/newdatabox/settings/'
           form:
             apikey: apikey
 
       write_stub = sinon.stub(fs, 'writeFile')
-        .withArgs('/home/newdatabox/scraperwiki.json')
+        .withArgs('/home/kiteorg/newdatabox/scraperwiki.json')
         .callsArgWith(3, null)
 
     after ->

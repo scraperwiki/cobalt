@@ -24,13 +24,13 @@ BASE_URL = 'http://127.0.0.1:3000/'
 apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
 describe 'SSH keys:', ->
-  describe '( POST /<box_name>/sshkeys )', ->
+  describe '( POST /<org>/<project>/sshkeys )', ->
     server = null
     mongoose = null
     write_stub = null
     chmod_stub = null
-    URL = "#{BASE_URL}newdatabox/sshkeys"
-
+    URL = "#{BASE_URL}kiteorg/newdatabox/sshkeys"
+ 
     before (done) ->
       server = require 'serv'
       mongoose = require 'mongoose'
@@ -39,13 +39,13 @@ describe 'SSH keys:', ->
       Box.collection.drop()
       new User({apikey: apikey}).save()
       User.findOne {apikey: apikey}, (err, user) ->
-        new Box({user: user._id, name: 'newdatabox'}).save()
+        new Box({user: user._id, name: 'kiteorg/newdatabox'}).save()
         SSHKey.collection.drop()
         done()
       #write_stub = sinon.stub fs, 'writeFile', (_p, _t, _e, cb) -> cb()
-      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
-      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", (parseInt '0600', 8)
-      chown_stub = sinon.stub(child_process, 'exec').withArgs "chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
+      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys"
+      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys", (parseInt '0600', 8)
+      chown_stub = sinon.stub(child_process, 'exec').withArgs "chown kiteorg/newdatabox: /opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys"
 
     it 'returns an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
@@ -218,6 +218,7 @@ describe 'SSH keys:', ->
             sshkey: noname_sshkey
 
         request.post options, (err, resp, body) ->
+            console.log resp.body
             (_.isEqual (JSON.parse resp.body),  {"error":"SSH Key has no name"}).should.be.true
             done()
 
