@@ -1,10 +1,36 @@
 {
   "status": "ok",
   "message": [
-    "This is a box that you can SSH to.",
-    "Add your SSH public key with the web API.",
+    "This is the box <%= box_name %>, a Unix shell account for the project.",
+    "",
+    "a) SSH access",
+    "Add your SSH public key with the web API."
     "curl --data-urlencode sshkey@$(printf ~/.ssh/id_[rd]sa.pub) --data apikey=<apikey> <%= rooturl %>/<boxname>/sshkeys",
-    "Then connect.",
-    "ssh <%= box_name %>@<%= server_ip %>"
+    "Then connect:",
+    "ssh <%= box_name %>@<%= server_ip %>",
+    "",
+    "b) git repository",
+    "Each box has its own git repository in the /home/ directory.",
+    "Initially it contains a readme.md file for describing the project",
+    "and a scraperwiki.json file for configuring it.",
+    "",
+    "c) Web server",
+    "The box can server static files in public. Put them in a",
+    "directory called http/ inside the box. They will be served",
+    "here (over either http or https):",
+    "https://<%= server_ip %>/<%= box_name %>/http",
+    "",
+    "d) Scheduling",
+    "Set a crontab using the crontab(1) command just like on any Unix.",
+    "shell account. e.g. crontab -e",
+    "",
+    "e) SQL over HTTP API",
+    "Specify the name of an SQLite file by adding an entry",
+    "'database' in scraperwiki.json. You can then query the",
+    "database with SQL over HTTP to get JSON using this URL:",
+    "https://<%= server_ip %>/<%= box_name %>/sqlite",
+    "Parameters are:",
+    "q= SQL query to execute",
+    "callback= (optional) return results as JSONP of specified variable"
   ]
 }
