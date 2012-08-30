@@ -4,7 +4,7 @@
     "This is the box <%= box_name %>, a Unix shell account for the project.",
     "",
     "a) SSH access",
-    "Add your SSH public key with the web API."
+    "Add your SSH public key with the web API.",
     "curl --data-urlencode sshkey@$(printf ~/.ssh/id_[rd]sa.pub) --data apikey=<apikey> <%= rooturl %>/<boxname>/sshkeys",
     "Then connect:",
     "ssh <%= box_name %>@<%= server_ip %>",
