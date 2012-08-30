@@ -30,11 +30,13 @@ app.configure 'production', ->
 
 mongoose.connect process.env['COBALT_DB']
 
-server_ip = '127.0.0.1'
-interfaces = os.networkInterfaces()
-server_ip = interfaces.eth0[0].address if interfaces.eth0?
-root_url = "http://#{server_ip}"
-root_url = root_url + ":#{process.env.COBALT_PORT}" unless process.env.COBALT_PORT == '8000'
+server_hostname = ''
+root_url = ''
+app.all "*", (req, res, next) ->
+  server_hostname = req.header('host')
+  root_url = "http://#{server_hostname}"
+  root_url = root_url + ":#{process.env.COBALT_PORT}" unless process.env.COBALT_PORT == '8000'
+  next()
 
 # Templating language
 app.set('view engine', 'ejs')
@@ -71,7 +73,7 @@ app.get "/:box_name/?", (req, res) ->
     res.render 'box',
       box_name: req.params.box_name
       rooturl: root_url
-      server_ip: server_ip
+      server_hostname: server_hostname
 
 # Get scraperwiki.json settings file
 app.get "/:org/:project/settings/?", check_api_key
