@@ -218,7 +218,6 @@ describe 'SSH keys:', ->
             sshkey: noname_sshkey
 
         request.post options, (err, resp, body) ->
-            console.log resp.body
             (_.isEqual (JSON.parse resp.body),  {"error":"SSH Key has no name"}).should.be.true
             done()
 

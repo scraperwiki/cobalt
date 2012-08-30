@@ -169,7 +169,6 @@ app.post "/:org/:project/settings/?", (req, res) ->
         return res.send { error: "Couldn't write scraperwiki.json" } , 400
 
 
-
 app.listen process.env.COBALT_PORT
 
 exports.unix_user_add = (box_name, callback) ->
