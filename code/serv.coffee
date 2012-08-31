@@ -51,9 +51,9 @@ check_api_key = (req, res, next) ->
     url = "https://scraperwiki.com/froth/check_key/#{apikey}"
     request.get url, (err, resp, body) ->
       body = JSON.parse body
-      return next() if resp.statusCode is 200 and req.params.org is body.org
-      User.findOne {apikey: apikey}, (err, user) ->
-        return next() if user?
+      if resp.statusCode is 200 and req.params.org is body.org
+        return next()
+      else
         return res.send {error: "Unauthorised"}, 403
   else
     return res.send {error: "No API key supplied"}, 403
