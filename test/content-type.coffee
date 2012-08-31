@@ -23,14 +23,7 @@ describe 'Content Types', ->
       it 'has JSON MIME type on get', (done) ->
         u = baseurl + path
         request.get {url:u}, (err, resp, body) ->
+          console.log body
           resp.headers['content-type'].should.include 'application/json'
           done()
 
-      it 'has JSON MIME type on post', (done) ->
-        u = baseurl + path
-        request.post {url:u}, (err, resp, body) ->
-          resp.headers['content-type'].should.include 'application/json'
-          done()
-
-  content_type ''
-  #content_type 'aoeuao'

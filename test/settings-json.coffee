@@ -10,6 +10,8 @@ User = require 'models/user'
 Box = require 'models/box'
 SSHKey = require 'models/ssh_key'
 
+nocks = require '../test/nocks'
+
 baseurl = 'http://127.0.0.1:3000/'
 
 describe "scraperwiki.json settings API", ->
@@ -41,12 +43,16 @@ describe "scraperwiki.json settings API", ->
       fs.readFile.restore()
 
     beforeEach ->
-      nock('https://scraperwiki.com')
-      .get("/froth/check_key/")
-      .reply 403, "403", { 'content-type': 'text/plain' }
-      nock('https://scraperwiki.com')
-      .get("/froth/check_key/#{apikey}")
-      .reply 200, "200", { 'content-type': 'text/plain' }
+      nocks.no_api_key()
+      nocks.success apikey
+
+    it "errors if getting settings outside my organisation", (done) ->
+      opt = _.clone options
+      opt.uri = opt.uri.replace 'kiteorg', 'notkiteorg'
+      request.get opt, (err, response, body) ->
+        response.statusCode.should.equal 403
+        should.exist (JSON.parse response.body).error
+        done()
 
     it "errors if no API key specified", (done) ->
       opt = _.clone options
@@ -96,9 +102,7 @@ describe "scraperwiki.json settings API", ->
 
     describe 'when the JSON is ok', ->
       before (done) ->
-        nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        nocks.success apikey
 
         options.form.data = JSON.stringify {database: 'sqlite.db'}
         request.post options, (err, resp, body) ->
@@ -113,9 +117,7 @@ describe "scraperwiki.json settings API", ->
 
     describe 'when the JSON invalid', ->
       before (done) ->
-        nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        nocks.success apikey
 
         options.form.data = "#why no comments? {asfsdf:'sdfsdf'}"
         request.post options, (err, resp, body) ->

@@ -50,7 +50,8 @@ check_api_key = (req, res, next) ->
   if apikey?
     url = "https://scraperwiki.com/froth/check_key/#{apikey}"
     request.get url, (err, resp, body) ->
-      return next() if resp.statusCode is 200
+      body = JSON.parse body
+      return next() if resp.statusCode is 200 and req.params.org is body.org
       User.findOne {apikey: apikey}, (err, user) ->
         return next() if user?
         return res.send {error: "Unauthorised"}, 403
@@ -79,6 +80,7 @@ app.get "/:org/:project/?", (req, res) ->
 # Get scraperwiki.json settings file
 app.get "/:org/:project/settings/?", check_api_key
 app.get "/:org/:project/settings/?", (req, res) ->
+  res.header('Content-Type', 'application/json')
   box_name = req.params.org + '/' + req.params.project
   fs.readFile "/home/#{box_name}/scraperwiki.json",
     'utf8',
@@ -91,8 +93,8 @@ app.get "/:org/:project/settings/?", (req, res) ->
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
 
-# Check API key for all POSTs
-app.post /.*/, check_api_key
+# Check API key for all org/project URLs
+app.post "/:org*", check_api_key
 
 # Create a box
 app.post "/:org/:project/?", (req, res) ->

@@ -19,11 +19,16 @@ User = require 'models/user'
 Box = require 'models/box'
 SSHKey = require 'models/ssh_key'
 
+nocks = require '../test/nocks'
+
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 BASE_URL = 'http://127.0.0.1:3000/'
 apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
 describe 'SSH keys:', ->
+  after ->
+    nock.cleanAll()
+
   describe '( POST /<org>/<project>/sshkeys )', ->
     server = null
     mongoose = null
@@ -50,7 +55,6 @@ describe 'SSH keys:', ->
     it 'returns an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
         resp.statusCode.should.equal 403
-        (_.isEqual (JSON.parse resp.body), {"error":"No API key supplied"}).should.be.true
         done()
 
     after ->
@@ -66,9 +70,7 @@ describe 'SSH keys:', ->
         """
 
       before (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        froth = nocks.success apikey
 
         options =
           uri: URL
@@ -101,9 +103,7 @@ describe 'SSH keys:', ->
 
     describe 'when the apikey is invalid', ->
       before ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/junk")
-        .reply 403, "403", { 'content-type': 'text/plain' }
+        froth = nocks.forbidden
 
       it 'returns an error', (done) ->
         options =
@@ -121,10 +121,7 @@ describe 'SSH keys:', ->
       before ->
         apikey2 = 'otheruserapikey'
         new User({apikey: apikey2}).save()
-
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/otheruserapikey")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        froth = nocks.success 'otheruserapikey'
 
       it 'returns an error', (done) ->
         options =
@@ -141,10 +138,7 @@ describe 'SSH keys:', ->
     describe "when the box doesn't exist", ->
       response = null
       before (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-
+        froth = nocks.success apikey
         options =
           uri: URL
           form:
@@ -166,10 +160,7 @@ describe 'SSH keys:', ->
       response = null
 
       before (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-
+        froth = nocks.success apikey
         options =
           uri: URL
           form:
@@ -183,14 +174,8 @@ describe 'SSH keys:', ->
         (_.isEqual (JSON.parse response.body), {"error":"SSH Key not specified"}).should.be.true
 
     describe "when sshkey isn't valid", ->
-      before ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-
+      beforeEach ->
+        froth = nocks.success apikey
 
       # do we need this now?
       it 'returns an error if completely invalid', (done) ->

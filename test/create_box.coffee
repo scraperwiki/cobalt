@@ -12,10 +12,15 @@ mongoose = require 'mongoose'
 User = require 'models/user'
 Box = require 'models/box'
 
+nocks = require '../test/nocks'
+
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000/'
 
 describe 'Creating a box:', ->
+  after ->
+    nock.cleanAll()
+
   describe '( POST /<org>/<project> )', ->
     server = null
     exec_stub = null
@@ -29,7 +34,7 @@ describe 'Creating a box:', ->
       done()
 
     it 'gives an error when creating a databox without a key', (done) ->
-      u = baseurl + 'newdatabox'
+      u = baseurl + 'kiteorg/newdatabox'
       request.post {url:u}, (err, resp, body) ->
         resp.statusCode.should.equal 403
         (_.isEqual (JSON.parse resp.body), {'error':'No API key supplied'}).should.be.true
@@ -41,11 +46,7 @@ describe 'Creating a box:', ->
       apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
       before (done) ->
-
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, (JSON.stringify { org: 'kiteorg'}),
-          { 'content-type': 'text/plain' }
+        froth = nocks.success apikey
 
         options =
           uri: baseurl + 'kiteorg/newdatabox'
@@ -78,10 +79,7 @@ describe 'Creating a box:', ->
           done()
 
       it 'errors when the box already exists', (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, (JSON.stringify { org: 'kiteorg'}),
-          { 'content-type': 'text/plain' }
+        froth = nocks.success apikey
 
         options =
           uri: baseurl + 'kiteorg/newdatabox'
@@ -100,10 +98,7 @@ describe 'Creating a box:', ->
       apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
       before (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, (JSON.stringify { org: 'kiteorg'}),
-          { 'content-type': 'text/plain' }
+        froth = nocks.success apikey
 
         options =
           uri: baseurl + 'kiteorg/box;with silly characters!'
@@ -120,10 +115,7 @@ describe 'Creating a box:', ->
 
     describe 'when the apikey is invalid', ->
       before ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/junk")
-        .reply 403, (JSON.stringify { error: 'Forbidden'}),
-          { 'content-type': 'text/plain' }
+        nocks.forbidden()
 
       it 'returns an error', (done) ->
         options =
