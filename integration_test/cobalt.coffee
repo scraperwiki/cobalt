@@ -10,8 +10,11 @@ _ = require 'underscore'
 host = 'boxecutor-int-test-0.scraperwiki.net'
 baseurl = "http://#{host}/"
 
-cobalt_api_key = process.env.COBALT_API_KEY
+cobalt_api_key = process.env.COTEST_USER_API_KEY
 boxname = 'cotest/' + String(Math.random()).replace(/\./,'')
+sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
+sshkey_prv_path =  "../swops-secret/cotest-rsa"
+fs.chmodSync sshkey_prv_path, 0o600
 
 describe 'Integration testing', ->
   describe 'When I use the http API', ->
@@ -32,7 +35,7 @@ describe 'Integration testing', ->
         uri: "http://#{host}/#{boxname}/sshkeys"
         form:
           apikey: cobalt_api_key
-          sshkey: fs.readFileSync "../swops-secret/cotest-rsa.pub", "ascii"
+          sshkey: fs.readFileSync sshkey_pub_path, "ascii"
       request.post options, (err, resp, body) ->
         should.not.exist err
         resp.should.have.status 200
@@ -41,9 +44,8 @@ describe 'Integration testing', ->
     it 'the CORS headers are present'
   describe 'When I login to my box', ->
     it 'SSH works', (done) ->
-      cmd = "ssh testorg/newbox@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey 'exit 99'"
+      cmd = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} 'exit 99'"
       exec cmd, (err, stdout_, stderr_) ->
-          console.log err
           err.code.should.equal 99
           done()
 
