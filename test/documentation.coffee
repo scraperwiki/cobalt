@@ -51,4 +51,20 @@ describe 'Box documentation', ->
         resp.body.should.include '@'
         JSON.parse resp.body
         done()
+        
+    it 'documents how to access web endpoint of box', (done) ->
+      u = baseurl + BOX
+      request.get {url:u}, (err, resp, body) ->
+        resp.statusCode.should.equal 200
+        resp.body.should.include 'https://127.0.0.1:3000/' + BOX + '/http'
+        JSON.parse resp.body
+        done()
+
+    it 'documents how to access SQLite endpoint of box', (done) ->
+      u = baseurl + BOX
+      request.get {url:u}, (err, resp, body) ->
+        resp.statusCode.should.equal 200
+        resp.body.should.include 'https://127.0.0.1:3000/' + BOX + '/sqlite'
+        JSON.parse resp.body
+        done()
 
