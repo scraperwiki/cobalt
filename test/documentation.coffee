@@ -15,7 +15,7 @@ httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000/'
 
 APIKEY = '342709d1-45b0-2d2e-sd66-6fb81d10e34e'
-BOX = 'olddatabox'
+BOX = 'oldorg/oldproject'
 
 describe 'Box documentation', ->
   describe '( GET / )', ->
@@ -30,7 +30,7 @@ describe 'Box documentation', ->
         JSON.parse resp.body
         done()
 
-  describe '( GET /<box_name> )', ->
+  describe '( GET /<org>/<project> )', ->
 
     before (done) ->
       User.collection.drop()

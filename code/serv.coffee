@@ -66,12 +66,13 @@ app.get "/", (req, res) ->
   res.render('index', {rooturl: root_url})
 
 # Documentation for SSHing to a box.
-app.get "/:box_name/?", (req, res) ->
+app.get "/:org/:project/?", (req, res) ->
+  box_name = req.params.org + '/' + req.params.project
   res.header('Content-Type', 'application/json')
-  Box.findOne {name: req.params.box_name}, (err, box) ->
+  Box.findOne {name: box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
     res.render 'box',
-      box_name: req.params.box_name
+      box_name: box_name
       rooturl: root_url
       server_hostname: server_hostname
 
