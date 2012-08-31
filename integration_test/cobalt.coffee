@@ -8,7 +8,7 @@ should = require 'should'
 _ = require 'underscore'
 
 host = 'boxecutor-int-test-0.scraperwiki.net'
-baseurl = "http://#{host}/"
+baseurl = "http://#{host}"
 
 cobalt_api_key = process.env.COTEST_USER_API_KEY
 boxname = 'cotest/' + String(Math.random()).replace(/\./,'')
@@ -53,7 +53,18 @@ describe 'Integration testing', ->
     it 'I can see my git repo'
     it 'I cannot see any other box'
   describe 'When I publish some files', ->
-    it 'I can see a root index page'
+    before (done) ->
+      cmd = "echo -n Testing > http/index.html"
+      ssh = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} '#{cmd}'"
+      exec ssh, (err, stdout_, stderr_) ->
+          done()
+
+    it 'I can see a root index page', (done) ->
+      response = request.get "#{baseurl}/#{boxname}/http/", (err, resp, body) ->
+        resp.should.have.status 200
+        body.should.equal 'Testing'
+        done()
+
     it 'I can see normal files'
     it 'I can see an index page for subdirectories'
     it 'I can follow my own symlinks'
