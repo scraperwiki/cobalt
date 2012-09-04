@@ -35,7 +35,7 @@ furnish_box() {
   # Just a wrapper really, switches to the user, then runs
   # another function.
   USERNAME="$1"
-  su -c ". ./code/chroot_user.sh; furnish_as_user" "$USERNAME"
+  su -c ". ./code/box_lib.sh; furnish_as_user" "$USERNAME"
 }
 
 furnish_as_user() {
