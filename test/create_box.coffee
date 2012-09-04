@@ -112,6 +112,25 @@ describe 'Creating a box:', ->
       it "returns an error", ->
         response.statusCode.should.equal 404
 
+    describe 'when we try and impersonate another org', ->
+      response = null
+      apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
+
+      before (done) ->
+        froth = nocks.success apikey
+
+        options =
+          uri: baseurl + 'otherorg/box'
+          form:
+            apikey: apikey
+        
+        request.post options, (err, resp, body) ->
+          response = resp
+          done()
+
+      it "returns an error", ->
+        response.statusCode.should.equal 403
+
 
     describe 'when the apikey is invalid', ->
       before ->
