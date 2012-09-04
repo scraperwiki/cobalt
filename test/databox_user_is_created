@@ -1,0 +1,20 @@
+#!/bin/sh
+
+. ./code/box_lib.sh
+
+setup() {
+  groupadd databox
+  create_user pbunyan
+}
+
+runtests() {
+  assert 'pbunyan is in /etc/passwd' [ "`grep -c ^pbunyan: /etc/passwd`" = '1' ]
+  assert 'pbunyan is in the databox group' [ "`groups pbunyan|grep -c \ databox$`" = '1' ]
+  assert "pbunyan's shell is bash" [ "`grep -c ^pbunyan.*/bin/bash$ /etc/passwd`" = '1' ]
+}
+
+teardown() {
+  userdel pbunyan
+  groupdel databox
+}
+

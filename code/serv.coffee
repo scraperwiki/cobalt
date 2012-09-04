@@ -178,12 +178,11 @@ app.listen process.env.COBALT_PORT
 
 exports.unix_user_add = (box_name, callback) ->
   cmd = """
-        cd /opt/deployment-hooks && . lib/chroot_user &&
-        export HOOKS_HOME=$(pwd) &&
+        cd /opt/cobalt &&
+        . ./code/box_lib.sh &&
         create_user #{box_name} &&
         create_user_directories #{box_name} &&
-        furnish_box #{box_name} &&
-        mkdir -p /opt/cobalt/etc/sshkeys/#{box_name}
+        furnish_box #{box_name}
         """
   # insecure - sanitise box_name
   exec cmd, callback
