@@ -73,6 +73,33 @@ describe 'Integration testing', ->
       it 'the JSONP thing works'
     describe 'as JSON', ->
       it 'the CORS headers are still present'
-  describe 'When I get data', ->
-    it 'I can use the SQL web API'
-   
+  describe 'When I use the SQL web API', ->
+    resp = null
+    before (done) ->
+      j =
+        database: 'scraperwiki.sqlite'
+      options =
+        uri: "http://#{host}/#{boxname}/settings"
+        form:
+          data: JSON.stringify j
+          apikey: cobalt_api_key
+      request.post options, (err, response, body) ->
+        cmd = '''echo "create table swdata (num int); insert into swdata values (7);" |
+          sqlite3 scraperwiki.sqlite'''
+        ssh = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} '#{cmd}'"
+        exec ssh, (err, stdout_, stderr_) ->
+          options =
+            uri: "http://#{host}/#{boxname}/sqlite"
+            qs:
+              q: "select num*num from swdata"
+          request.get options, (err, response, body) ->
+            should.not.exist err
+            resp = response
+            done()
+
+    it 'has status 200', ->
+      resp.should.have.status 200
+    it 'returns JSON', ->
+      should.exist (JSON.parse resp.body)
+    it 'has value 49', ->
+      (JSON.parse resp.body)[0]['num*num'].should.equal 49
