@@ -91,14 +91,12 @@ describe 'Creating a box:', ->
           done()
 
 
-    describe 'when we use a naughty box name', ->
-      froth = null
+    describe 'when we use silly characters in a box name', ->
       response = null
-      exec_stub = null
       apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
       before (done) ->
-        froth = nocks.success apikey
+        nocks.success apikey
 
         options =
           uri: baseurl + 'kiteorg/box;with silly characters!'
