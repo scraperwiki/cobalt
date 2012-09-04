@@ -9,7 +9,7 @@ a sandboxed environment.
 5 git repositories are needed (cobalt, lithium, swops, swops-secret, deployment-hooks).
 They should be cloned side-by-side.  Pick a new directory if you want.
 
-    git clone git@bitbucket.org:ScraperWiki/swops-secret.git
+    git clone git@github.com:scraperwiki/swops-secret.git
     git clone git@github.com:scraperwiki/lithium.git
     git clone git@github.com:scraperwiki/cobalt.git
     git clone git@github.com:scraperwiki/swops.git
