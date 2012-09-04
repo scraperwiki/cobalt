@@ -56,7 +56,7 @@ To run the integration tests:
     mocha integration_test
 
 integration_test/cobalt.coffee has the host name that the integration tests
-are run on hardwired into it. It's key is in swops-secret.
+are run on hardwired into it. Its key is in swops-secret.
 
 ### Using Lithium ###
 
