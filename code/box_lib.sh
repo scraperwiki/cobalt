@@ -56,11 +56,11 @@ furnish_as_user() {
 EOF
 )"
 
-  # readme.md
-  cat > readme.md <<EOF
+  # README.md
+  cat > README.md <<EOF
 ScraperWiki box $(whoami)
 
-This is the readme.md file for your box.
+This is the README.md file for your box.
 
 =======
 We recommend that you edit this file and describe your box.

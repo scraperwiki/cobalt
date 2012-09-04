@@ -49,7 +49,7 @@ describe 'Integration testing', ->
           err.code.should.equal 99
           done()
 
-    it 'I can see my readme.md'
+    it 'I can see my README.md'
     it 'I can see my git repo'
     it 'I cannot see any other box'
   describe 'When I publish some files', ->
