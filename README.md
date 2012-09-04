@@ -45,9 +45,18 @@ You need to set up the environment and so on:
     
 ### Running Cobalt Tests ###
 
+To run the unit tests:
+
     cd cobalt
     . ./activate
     mocha
+
+To run the integration tests:
+
+    mocha integration_test
+
+integration_test/cobalt.coffee has the host name that the integration tests
+are run on hardwired into it. It's key is in swops-secret.
 
 ### Using Lithium ###
 
