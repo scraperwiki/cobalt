@@ -13,7 +13,6 @@ They should be cloned side-by-side.  Pick a new directory if you want.
     git clone git@github.com:scraperwiki/lithium.git
     git clone git@github.com:scraperwiki/cobalt.git
     git clone git@github.com:scraperwiki/swops.git
-    git clone git@github.com:scraperwiki/deployment-hooks.git
 
 Lithium and Cobalt both have their own dependencies for Node
 packages. You'll need to install them when you first clone, and then
@@ -57,26 +56,3 @@ To run the integration tests:
 
 integration_test/cobalt.coffee has the host name that the integration tests
 are run on hardwired into it. Its key is in swops-secret.
-
-### Using Lithium ###
-
-Using lithium spends money.  Not much.
-
-    li
-    li list
-    li create boxecutor
-    li start boxecutor_1
-    li deploy boxecutor_1
-
-### Server States ###
-
-                              .---------stop----------.
-                              v                       |
-    +-----+            +-------------+           +---------+
-    |     | --create-> | not running | --start-> | running |
-    +-----+            +-------------+           +---------+
-       ^                      |                       |
-       `-------------------destroy--------------------'
-                            
-
-
