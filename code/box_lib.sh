@@ -33,6 +33,7 @@ create_user_directories() {
   CRON_TAB_DIR="/var/spool/cron/crontabs/${ORG}"
   mkdir -p ${CRON_TAB_DIR}
   chmod 1730 ${CRON_TAB_DIR}
+  chown :crontab ${CRON_TAB_DIR}
 }
 
 furnish_box() {
