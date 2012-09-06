@@ -7,7 +7,7 @@ request = require 'request'
 should = require 'should'
 _ = require 'underscore'
 
-host = 'boxecutor-int-test-0.scraperwiki.net'
+host = process.env.COBALT_INTEGRATION_TEST_SERVER or 'boxecutor-int-test-0.scraperwiki.net'
 baseurl = "http://#{host}"
 
 cobalt_api_key = process.env.COTEST_USER_API_KEY
