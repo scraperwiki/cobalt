@@ -21,8 +21,11 @@ get_new_name = (row, callback) ->
         request.get url, (err, resp, body) ->
           body = JSON.parse body
           if resp.statusCode is 200
-            console.log "#{body.org}/#{box.name}"
-          callback()
+            new_name =  "#{body.org}/#{box.name}"
+            box.name = new_name
+            box.save (err) ->
+              console.log err if err?
+              callback()
     else
       # System users will reach here
       callback()
