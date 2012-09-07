@@ -90,6 +90,21 @@ app.get "/:org/:project/settings/?", (req, res) ->
       else
         res.send {error:"scraperwiki.json not found"}, 404
 
+# Get file
+app.get "/:org/:project/files/*", check_api_key
+app.get "/:org/:project/files/*", (req, res) ->
+  res.header('Content-Type', 'application/json')
+  box_name = req.params.org + '/' + req.params.project
+  path = req.path.replace "/#{box_name}/files", ''
+  child_process.exec "su -c \"cat /home#{path}\" #{box_name}",
+    'utf8',
+    (err, stdout, stderr) ->
+      if !err and !stderr
+        res.send stdout
+      else
+        res.send {error:"#{path} is not a file"}, 400
+
+
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
 
