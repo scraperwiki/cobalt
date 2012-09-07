@@ -40,7 +40,7 @@ furnish_box() {
   # Just a wrapper really, switches to the user, then runs
   # another function.
   USERNAME="$1"
-  su -c ". ./code/box_lib.sh; furnish_as_user" "$USERNAME"
+  sudo -u "$USERNAME" sh -c ". ./code/box_lib.sh; furnish_as_user"
 }
 
 furnish_as_user() {
