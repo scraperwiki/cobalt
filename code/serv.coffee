@@ -80,16 +80,16 @@ app.get "/:org/:project/?", (req, res) ->
 # Get file
 app.get "/:org/:project/files/*", check_api_key
 app.get "/:org/:project/files/*", (req, res) ->
-  res.header('Content-Type', 'application/json')
+  res.removeHeader('Content-Type')
   box_name = req.params.org + '/' + req.params.project
   path = req.path.replace "/#{box_name}/files", ''
-  child_process.exec "su -c \"cat /home#{path}\" #{box_name}",
-    'utf8',
-    (err, stdout, stderr) ->
-      if !err and !stderr
-        res.send stdout
-      else
-        res.send {error:"#{path} is not a file"}, 400
+  su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{box_name}"]
+  su.stdout.on 'data', (data) ->
+      res.write data
+  su.stderr.on 'data', (data) ->
+      res.send {error:"Error reading #{path}"}, 500
+  su.on 'exit', (code) ->
+      res.end()
 
 
 # POST REQUESTS
