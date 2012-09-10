@@ -65,6 +65,26 @@ describe 'Integration testing', ->
         body.should.equal 'Testing'
         done()
 
+    it 'I can see my my README.md file using the files API', (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/files/README.md"
+            qs:
+              apikey: cobalt_api_key
+        response = request.get options, (err, resp, body) ->
+          body.should.match /This is the README\.md file/
+          resp.should.have.status 200
+          done()
+
+    it 'I can see my my index.html file using the files API', (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/files/http/index.html"
+            qs:
+              apikey: cobalt_api_key
+        response = request.get options, (err, resp, body) ->
+          body.should.equal 'Testing'
+          resp.should.have.status 200
+          done()
+
     it 'I can see normal files'
     it 'I can see an index page for subdirectories'
     it 'I can follow my own symlinks'
