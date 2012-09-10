@@ -83,6 +83,8 @@ app.get "/:org/:project/files/*", (req, res) ->
   res.removeHeader('Content-Type')
   box_name = req.params.org + '/' + req.params.project
   path = req.path.replace "/#{box_name}/files", ''
+  path = path.replace /\'/g, ''
+  box_name = box_name.replace /\'/g, ''
   su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{box_name}"]
   su.stdout.on 'data', (data) ->
       res.write data
