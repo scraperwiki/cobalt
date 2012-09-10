@@ -82,6 +82,8 @@ app.get "/:org/:project/settings/?", check_api_key
 app.get "/:org/:project/settings/?", (req, res) ->
   res.header('Content-Type', 'application/json')
   box_name = req.params.org + '/' + req.params.project
+  path = path.replace /\'/g, '' # Sanitise path?
+  box_name = box_name.replace /\'/g, '' # Sanitise box name?
   fs.readFile "/home/#{box_name}/scraperwiki.json",
     'utf8',
     (err, data) ->
