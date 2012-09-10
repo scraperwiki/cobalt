@@ -77,21 +77,6 @@ app.get "/:org/:project/?", (req, res) ->
       rooturl: root_url
       server_hostname: server_hostname
 
-# Get scraperwiki.json settings file
-app.get "/:org/:project/settings/?", check_api_key
-app.get "/:org/:project/settings/?", (req, res) ->
-  res.header('Content-Type', 'application/json')
-  box_name = req.params.org + '/' + req.params.project
-  path = path.replace /\'/g, '' # Sanitise path?
-  box_name = box_name.replace /\'/g, '' # Sanitise box name?
-  fs.readFile "/home/#{box_name}/scraperwiki.json",
-    'utf8',
-    (err, data) ->
-      if !err
-        res.send data
-      else
-        res.send {error:"scraperwiki.json not found"}, 404
-
 # Get file
 app.get "/:org/:project/files/*", check_api_key
 app.get "/:org/:project/files/*", (req, res) ->
@@ -173,23 +158,6 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
           fs.chmodSync keys_path, 0o600
           child_process.exec "chown #{box.name}: #{keys_path}" # insecure
           return res.send {"status": "ok"}
-
-# Set scraperwiki.json settings file
-app.post "/:org/:project/settings/?", (req, res) ->
-  box_name = req.params.org + '/' + req.params.project
-
-  json = null
-  try
-    json = JSON.parse req.body.data
-  catch e
-    return res.send { error: "Invalid JSON" }, 400
-  fs.writeFile "/home/#{box_name}/scraperwiki.json",
-    (JSON.stringify json, null, 2), 'utf8', (err) ->
-      if !err
-        return res.send { message: "ok" }, 200
-      else
-        return res.send { error: "Couldn't write scraperwiki.json" } , 400
-
 
 app.listen process.env.COBALT_PORT
 
