@@ -77,18 +77,22 @@ app.get "/:org/:project/?", (req, res) ->
       rooturl: root_url
       server_hostname: server_hostname
 
-# Get scraperwiki.json settings file
-app.get "/:org/:project/settings/?", check_api_key
-app.get "/:org/:project/settings/?", (req, res) ->
-  res.header('Content-Type', 'application/json')
+# Get file
+app.get "/:org/:project/files/*", check_api_key
+app.get "/:org/:project/files/*", (req, res) ->
+  res.removeHeader('Content-Type')
   box_name = req.params.org + '/' + req.params.project
-  fs.readFile "/home/#{box_name}/scraperwiki.json",
-    'utf8',
-    (err, data) ->
-      if !err
-        res.send data
-      else
-        res.send {error:"scraperwiki.json not found"}, 404
+  path = req.path.replace "/#{box_name}/files", ''
+  path = path.replace /\'/g, ''
+  box_name = box_name.replace /\'/g, ''
+  su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{box_name}"]
+  su.stdout.on 'data', (data) ->
+      res.write data
+  su.stderr.on 'data', (data) ->
+      res.send {error:"Error reading #{path}"}, 500
+  su.on 'exit', (code) ->
+      res.end()
+
 
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
@@ -156,23 +160,6 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
           fs.chmodSync keys_path, 0o600
           child_process.exec "chown #{box.name}: #{keys_path}" # insecure
           return res.send {"status": "ok"}
-
-# Set scraperwiki.json settings file
-app.post "/:org/:project/settings/?", (req, res) ->
-  box_name = req.params.org + '/' + req.params.project
-
-  json = null
-  try
-    json = JSON.parse req.body.data
-  catch e
-    return res.send { error: "Invalid JSON" }, 400
-  fs.writeFile "/home/#{box_name}/scraperwiki.json",
-    (JSON.stringify json, null, 2), 'utf8', (err) ->
-      if !err
-        return res.send { message: "ok" }, 200
-      else
-        return res.send { error: "Couldn't write scraperwiki.json" } , 400
-
 
 app.listen process.env.COBALT_PORT
 

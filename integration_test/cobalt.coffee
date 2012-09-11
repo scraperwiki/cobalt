@@ -16,6 +16,11 @@ sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
 sshkey_prv_path =  "../swops-secret/cotest-rsa"
 fs.chmodSync sshkey_prv_path, 0o600
 
+ssh_cmd = (cmd, callback) ->
+  ssh = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} '#{cmd}'"
+  exec ssh, (err, stdout, stderr) ->
+    callback err, stdout, stderr
+
 describe 'Integration testing', ->
   describe 'When I use the http API', ->
     it 'GET / works'
@@ -44,26 +49,44 @@ describe 'Integration testing', ->
     it 'the CORS headers are present'
   describe 'When I login to my box', ->
     it 'SSH works', (done) ->
-      cmd = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} 'exit 99'"
-      exec cmd, (err, stdout_, stderr_) ->
-          err.code.should.equal 99
-          done()
+      ssh_cmd 'exit 99', (err) ->
+        err.code.should.equal 99
+        done()
 
     it 'I can see my README.md'
     it 'I can see my git repo'
     it 'I cannot see any other box'
+
   describe 'When I publish some files', ->
     before (done) ->
-      cmd = "echo -n Testing > http/index.html"
-      ssh = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} '#{cmd}'"
-      exec ssh, (err, stdout_, stderr_) ->
-          done()
+      ssh_cmd "echo -n Testing > http/index.html", ->
+        ssh_cmd '''echo -n "{\\"database\\": \\"scraperwiki.sqlite\\"}" > scraperwiki.json''', done
 
     it 'I can see a root index page', (done) ->
       response = request.get "#{baseurl}/#{boxname}/http/", (err, resp, body) ->
         resp.should.have.status 200
         body.should.equal 'Testing'
         done()
+
+    it 'I can see my my README.md file using the files API', (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/files/README.md"
+            qs:
+              apikey: cobalt_api_key
+        response = request.get options, (err, resp, body) ->
+          body.should.match /This is the README\.md file/
+          resp.should.have.status 200
+          done()
+
+    it 'I can see my my index.html file using the files API', (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/files/http/index.html"
+            qs:
+              apikey: cobalt_api_key
+        response = request.get options, (err, resp, body) ->
+          body.should.equal 'Testing'
+          resp.should.have.status 200
+          done()
 
     it 'I can see normal files'
     it 'I can see an index page for subdirectories'
@@ -76,26 +99,16 @@ describe 'Integration testing', ->
   describe 'When I use the SQL web API', ->
     resp = null
     before (done) ->
-      j =
-        database: 'scraperwiki.sqlite'
-      options =
-        uri: "http://#{host}/#{boxname}/settings"
-        form:
-          data: JSON.stringify j
-          apikey: cobalt_api_key
-      request.post options, (err, response, body) ->
-        cmd = '''echo "create table swdata (num int); insert into swdata values (7);" |
-          sqlite3 scraperwiki.sqlite'''
-        ssh = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} '#{cmd}'"
-        exec ssh, (err, stdout_, stderr_) ->
-          options =
-            uri: "http://#{host}/#{boxname}/sqlite"
-            qs:
-              q: "select num*num from swdata"
-          request.get options, (err, response, body) ->
-            should.not.exist err
-            resp = response
-            done()
+       ssh_cmd '''echo "create table swdata (num int); insert into swdata values (7);" |
+          sqlite3 scraperwiki.sqlite''', ->
+         options =
+           uri: "http://#{host}/#{boxname}/sqlite"
+           qs:
+             q: "select num*num from swdata"
+         request.get options, (err, response, body) ->
+           should.not.exist err
+           resp = response
+           done()
 
     it 'has status 200', ->
       resp.should.have.status 200

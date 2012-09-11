@@ -59,6 +59,8 @@ describe 'SSH keys:', ->
 
     after ->
       fs.writeFileSync.restore()
+      fs.chmodSync.restore()
+      child_process.exec.restore()
 
     describe 'when the apikey is valid and box exists', ->
       froth = null
