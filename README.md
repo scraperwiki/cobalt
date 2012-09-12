@@ -50,9 +50,14 @@ To run the unit tests:
     . ./activate
     mocha
 
-To run the integration tests:
+To get the integration server to pull the most recent changes:
 
+    li sh boxecutor-int-test-0 "cd /opt/cobalt && git pull && service cobalt restart"
+
+and to run the integration tests:
+    
     mocha integration_test
 
 integration_test/cobalt.coffee has the host name that the integration tests
 are run on hardwired into it. Its key is in swops-secret.
+
