@@ -57,7 +57,7 @@ furnish_as_user() {
   # Slightly hairy shell, because the .json file cannot end in a
   # newline.
   printf > scraperwiki.json "%s" "$(cat <<EOF
-{}
+{"database":"scraperwiki.sqlite"}
 EOF
 )"
 
