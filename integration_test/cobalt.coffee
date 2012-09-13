@@ -60,12 +60,19 @@ describe 'Integration testing', ->
         should.not.exist err
         resp.should.have.status 200
         done()
-      
+
     it 'the CORS headers are present'
   describe 'When I login to my box', ->
     it 'SSH works', (done) ->
       ssh_cmd 'exit 99', (err) ->
         err.code.should.equal 99
+        done()
+
+    it 'I have some default values in scraperwiki.json', (done) ->
+      ssh_cmd "cat ~/scraperwiki.json", (err, stdout, stderr) ->
+        settings = JSON.parse(stdout)
+        settings.database.should.equal "scraperwiki.sqlite"
+        settings.publish_token.should.match /[0-9a-z]{15}/
         done()
 
     it 'I can see my README.md'
@@ -74,7 +81,8 @@ describe 'Integration testing', ->
 
   describe 'When I publish some files', ->
     before (done) ->
-      ssh_cmd "echo -n Testing > http/index.html", done
+      scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
+        ssh_cmd "echo -n Testing > http/index.html", done
 
     it 'I can see a root index page', (done) ->
       response = request.get "#{baseurl}/#{boxname}/http/", (err, resp, body) ->
