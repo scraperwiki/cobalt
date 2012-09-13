@@ -16,9 +16,24 @@ sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
 sshkey_prv_path =  "../swops-secret/cotest-rsa"
 fs.chmodSync sshkey_prv_path, 0o600
 
+ssh_args = [
+  "-o User=#{boxname}",
+  "-o LogLevel=ERROR",
+  "-o UserKnownHostsFile=/dev/null",
+  "-o StrictHostKeyChecking=no",
+  "-o IdentitiesOnly=yes",
+  "-o PreferredAuthentications=publickey",
+  "-i #{sshkey_prv_path}"
+]
+
 ssh_cmd = (cmd, callback) ->
-  ssh = "ssh #{boxname}@#{host} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o LogLevel=ERROR -i #{sshkey_prv_path} '#{cmd}'"
+  ssh = "ssh #{ssh_args.join ' '} #{host} '#{cmd}'"
   exec ssh, (err, stdout, stderr) ->
+   callback err, stdout, stderr
+
+scp_cmd = (file_path, file_name, callback) ->
+  scp = "scp #{ssh_args.join ' '} #{file_path} #{host}:#{file_name}"
+  exec scp, (err, stdout, stderr) ->
     callback err, stdout, stderr
 
 describe 'Integration testing', ->
@@ -59,14 +74,27 @@ describe 'Integration testing', ->
 
   describe 'When I publish some files', ->
     before (done) ->
-      ssh_cmd "echo -n Testing > http/index.html", ->
-        ssh_cmd '''echo -n "{\\"database\\": \\"scraperwiki.sqlite\\"}" > scraperwiki.json''', done
+      ssh_cmd "echo -n Testing > http/index.html", done
 
     it 'I can see a root index page', (done) ->
       response = request.get "#{baseurl}/#{boxname}/http/", (err, resp, body) ->
         resp.should.have.status 200
         body.should.equal 'Testing'
         done()
+
+    describe 'with a publishing token set in scraperwiki.json', ->
+      it "doesn't allow access if wrong", (done) ->
+        scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
+          response = request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
+            resp.should.have.status 403
+            done()
+
+      it "allows access with it", (done) ->
+        scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
+          response = request.get "#{baseurl}/#{boxname}/0123456789/http/", (err, resp, body) ->
+            resp.should.have.status 200
+            body.should.equal 'Testing'
+            done()
 
     it 'I can see my my README.md file using the files API', (done) ->
         options =
@@ -96,19 +124,20 @@ describe 'Integration testing', ->
       it 'the JSONP thing works'
     describe 'as JSON', ->
       it 'the CORS headers are still present'
+
   describe 'When I use the SQL web API', ->
     resp = null
     before (done) ->
-       ssh_cmd '''echo "create table swdata (num int); insert into swdata values (7);" |
-          sqlite3 scraperwiki.sqlite''', ->
-         options =
-           uri: "http://#{host}/#{boxname}/sqlite"
-           qs:
-             q: "select num*num from swdata"
-         request.get options, (err, response, body) ->
-           should.not.exist err
-           resp = response
-           done()
+      scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
+        ssh_cmd '''echo "create table swdata (num int); insert into swdata values (7);" | sqlite3 test.sqlite''', ->
+          options =
+            uri: "http://#{host}/#{boxname}/sqlite"
+            qs:
+              q: "select num*num from swdata"
+          request.get options, (err, response, body) ->
+            should.not.exist err
+            resp = response
+            done()
 
     it 'has status 200', ->
       resp.should.have.status 200
