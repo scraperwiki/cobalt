@@ -104,6 +104,13 @@ describe 'Integration testing', ->
             body.should.equal 'Testing'
             done()
 
+    describe 'without a publishing token set in scraperwiki.json', ->
+      it "404s if a token is used", (done) ->
+        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
+          response = request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
+            resp.should.have.status 404
+            done()
+
     it 'I can see my my README.md file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/README.md"
