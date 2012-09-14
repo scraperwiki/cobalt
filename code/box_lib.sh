@@ -67,8 +67,8 @@ EOF
 ScraperWiki box $(whoami)
 
 This is the README.md file for your box.
-
 =======
+
 We recommend that you edit this file and describe your box.
 EOF
 
