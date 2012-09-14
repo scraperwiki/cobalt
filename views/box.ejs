@@ -18,7 +18,11 @@
     "The box can server static files in public. Put them in a",
     "directory called http/ inside the box. They will be served",
     "here (over either http or https):",
+    <% if (publish_token) { %>
+    "https://<%= server_hostname %>/<%= box_name %>/<%= publish_token %>/http",
+    <% } else { %>
     "https://<%= server_hostname %>/<%= box_name %>/http",
+    <% } %>
     "",
     "d) Scheduling",
     "Set a crontab using the crontab(1) command just like on any Unix.",
