@@ -38,7 +38,11 @@ scp_cmd = (file_path, file_name, callback) ->
 
 describe 'Integration testing', ->
   describe 'When I use the http API', ->
-    it 'GET / works'
+    it 'GET / works', (done) ->
+      request.get "#{baseurl}/", (err, resp, body) ->
+        resp.should.have.status 200
+        done()
+
     it 'I can create a box', (done) ->
       should.exist cobalt_api_key
       options =
@@ -61,7 +65,12 @@ describe 'Integration testing', ->
         resp.should.have.status 200
         done()
 
-    it 'the CORS headers are present'
+    it 'the CORS headers are present', (done) ->
+      request.get "#{baseurl}/", (err, resp, body) ->
+        resp.should.have.status 200
+        resp.headers["access-control-allow-origin"].should.equal '*'
+        done()
+
   describe 'When I login to my box', ->
     it 'SSH works', (done) ->
       ssh_cmd 'exit 99', (err) ->
@@ -75,66 +84,109 @@ describe 'Integration testing', ->
         settings.publish_token.should.match /[0-9a-z]{15}/
         done()
 
-    it 'I can see my README.md'
-    it 'I can see my git repo'
-    it 'I cannot see any other box'
+    it 'I can see my README.md', (done) ->
+      ssh_cmd "ls ~/README.md", (err, stdout, stderr) ->
+        should.not.exist err
+        stderr.should.be.empty
+        done()
+
+    it 'I can see my git repo', (done) ->
+      ssh_cmd "git status", (err, stdout, stderr) ->
+        should.not.exist err
+        stderr.should.be.empty
+        done()
+
+    it "I cannot see any other box (i.e. I'm chrooted)", (done) ->
+      ssh_cmd "ls -di", (err, stdout, stderr) ->
+        should.not.exist err
+        stdout.should.not.match /2 \//
+        done()
 
   describe 'When I publish some files', ->
     before (done) ->
       scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
         ssh_cmd "echo -n Testing > http/index.html", done
 
-    it 'I can see a root index page', (done) ->
-      response = request.get "#{baseurl}/#{boxname}/http/", (err, resp, body) ->
-        resp.should.have.status 200
-        body.should.equal 'Testing'
-        done()
+    describe "...HTTP...", ->
+      it 'I can see a root index page', (done) ->
+        request.get "#{baseurl}/#{boxname}/http/", (err, resp, body) ->
+          resp.should.have.status 200
+          body.should.equal 'Testing'
+          done()
 
-    describe 'with a publishing token set in scraperwiki.json', ->
-      it "doesn't allow access if wrong", (done) ->
-        scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
-          response = request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
-            resp.should.have.status 403
-            done()
-
-      it "allows access with it", (done) ->
-        scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
-          response = request.get "#{baseurl}/#{boxname}/0123456789/http/", (err, resp, body) ->
+      it 'I can see normal files', (done) ->
+          request.get "#{baseurl}/#{boxname}/http/index.html", (err, resp, body) ->
             resp.should.have.status 200
             body.should.equal 'Testing'
             done()
 
-    describe 'without a publishing token set in scraperwiki.json', ->
-      it "404s if a token is used", (done) ->
-        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
-          response = request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
-            resp.should.have.status 404
-            done()
+      it 'I can see an index page for subdirectories', (jai_fini) ->
+        ssh_cmd "mkdir /home/http/shakeit", ->
+          request.get "#{baseurl}/#{boxname}/http/shakeit", (err, resp, body) ->
+            resp.should.have.status 200
+            body.should.include 'Index of'
+            jai_fini()
 
-    it 'I can see my my README.md file using the files API', (done) ->
+      describe 'with a publishing token set in scraperwiki.json', ->
+        it "doesn't allow access if wrong", (done) ->
+          scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
+            request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
+              resp.should.have.status 403
+              done()
+
+        it "allows access with it", (done) ->
+          scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
+            request.get "#{baseurl}/#{boxname}/0123456789/http/", (err, resp, body) ->
+              resp.should.have.status 200
+              body.should.equal 'Testing'
+              done()
+
+      describe 'without a publishing token set in scraperwiki.json', ->
+        it "404s if a token is used", (done) ->
+          scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
+            request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
+              resp.should.have.status 404
+              done()
+
+    describe "...files API...", ->
+      it 'I can see my my README.md file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/README.md"
             qs:
               apikey: cobalt_api_key
-        response = request.get options, (err, resp, body) ->
+        request.get options, (err, resp, body) ->
           body.should.match /This is the README\.md file/
           resp.should.have.status 200
           done()
 
-    it 'I can see my my index.html file using the files API', (done) ->
+      it 'I can see my my index.html file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/http/index.html"
             qs:
               apikey: cobalt_api_key
-        response = request.get options, (err, resp, body) ->
+        request.get options, (err, resp, body) ->
           body.should.equal 'Testing'
           resp.should.have.status 200
           done()
 
-    it 'I can see normal files'
-    it 'I can see an index page for subdirectories'
-    it 'I can follow my own symlinks'
-    it 'I cannot follow naughty symlinks'
+
+    describe '...symlinks...', ->
+      before (done) ->
+        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
+          ssh_cmd "ln -s /etc/shadow ~/http/nawty; ln -s ../scraperwiki.json ~/http/nice ", done
+
+      it 'I can follow my own symlinks', (done) ->
+        request.get "#{baseurl}/#{boxname}/http/nice", (err, resp, body) ->
+          expected = fs.readFileSync "./integration_test/fixtures/scraperwiki-database.json", 'ascii'
+          resp.should.have.status 200
+          body.should.equal expected
+          done()
+
+      it 'I cannot follow naughty symlinks', (done) ->
+        request.get "#{baseurl}/#{boxname}/http/nawty", (err, resp, body) ->
+          resp.should.have.status 403
+          body.should.include 'Forbidden'
+          done()
 
     describe 'When I specify a callback parameter', (done) ->
       resp = null
@@ -160,9 +212,6 @@ describe 'Integration testing', ->
 
       it 'does not return JSONP if the requested file is not JSON'
         # With the current jsonp hack, this test will fail
-
-    describe 'as JSON', ->
-      it 'the CORS headers are still present'
 
   describe 'When I use the SQL web API', ->
     resp = null
