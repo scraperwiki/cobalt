@@ -75,9 +75,23 @@ describe 'Integration testing', ->
         settings.publish_token.should.match /[0-9a-z]{15}/
         done()
 
-    it 'I can see my README.md'
-    it 'I can see my git repo'
-    it 'I cannot see any other box'
+    it 'I can see my README.md', (done) ->
+      ssh_cmd "ls ~/README.md", (err, stdout, stderr) ->
+        should.not.exist err
+        stderr.should.be.empty
+        done()
+
+    it 'I can see my git repo', (done) ->
+      ssh_cmd "git status", (err, stdout, stderr) ->
+        should.not.exist err
+        stderr.should.be.empty
+        done()
+
+    it "I cannot see any other box (i.e. I'm chrooted)", (done) ->
+      ssh_cmd "ls -di", (err, stdout, stderr) ->
+        should.not.exist err
+        stdout.should.not.match /2 \//
+        done()
 
   describe 'When I publish some files', ->
     before (done) ->
