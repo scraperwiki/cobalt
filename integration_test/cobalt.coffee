@@ -135,8 +135,31 @@ describe 'Integration testing', ->
     it 'I can see an index page for subdirectories'
     it 'I can follow my own symlinks'
     it 'I cannot follow naughty symlinks'
-    describe 'as JSONP', ->
-      it 'the JSONP thing works'
+
+    describe 'When I specify a callback parameter', (done) ->
+      resp = null
+      body = null
+      before (done) ->
+        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "http/test.json", ->
+          options =
+            uri: "http://#{host}/#{boxname}/http/test.json"
+            qs:
+              callback: "cb_test"
+          request.get options, (err, response, body) ->
+            should.not.exist err
+            resp = response
+            done()
+
+      it 'returns the expected JSON wrapped in the expected callback', ->
+        expected = JSON.parse fs.readFileSync "./integration_test/fixtures/scraperwiki-database.json", 'ascii'
+        cb_test = (json) -> return json
+        a = JSON.stringify(eval resp.body)
+        b = JSON.stringify(expected)
+        a.should.equal(b)
+        resp.should.have.status 200
+
+      it 'does not return JSONP if the requested file is not JSON'
+
     describe 'as JSON', ->
       it 'the CORS headers are still present'
 
