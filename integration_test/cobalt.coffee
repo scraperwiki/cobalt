@@ -211,6 +211,7 @@ describe 'Integration testing', ->
         resp.should.have.status 200
 
       it 'does not return JSONP if the requested file is not JSON'
+        # With the current jsonp hack, this test will fail
 
   describe 'When I use the SQL web API', ->
     resp = null
