@@ -214,21 +214,51 @@ describe 'Integration testing', ->
 
   describe 'When I use the SQL web API', ->
     resp = null
+    options =
+      qs:
+        q: "select num*num from swdata"
+
     before (done) ->
-      scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
-        ssh_cmd '''echo "create table swdata (num int); insert into swdata values (7);" | sqlite3 test.sqlite''', ->
-          options =
-            uri: "http://#{host}/#{boxname}/sqlite"
-            qs:
-              q: "select num*num from swdata"
-          request.get options, (err, response, body) ->
-            should.not.exist err
-            resp = response
+      ssh_cmd '''echo "create table swdata (num int); insert into swdata values (7);" | sqlite3 test.sqlite''', done
+
+    describe 'with a publishing token set in scraperwiki.json', ->
+      before (done) ->
+        scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", done
+
+      describe 'when wrong', ->
+        before (done) ->
+          request.get { uri: "#{baseurl}/#{boxname}/0987654321/sqlite/", qs: options.qs }, (err, r, body) ->
+            resp = r
             done()
 
-    it 'has status 200', ->
-      resp.should.have.status 200
-    it 'returns JSON', ->
-      should.exist (JSON.parse resp.body)
-    it 'has value 49', ->
-      (JSON.parse resp.body)[0]['num*num'].should.equal 49
+        it "doesn't allow access", ->
+          resp.should.have.status 403
+
+      describe 'when correct', ->
+        before (done) ->
+          request.get { uri: "#{baseurl}/#{boxname}/0123456789/sqlite/", qs: options.qs }, (err, r, body) ->
+            resp = r
+            done()
+
+        it "allows access", ->
+          resp.should.have.status 200
+
+        it 'returns JSON', ->
+          should.exist (JSON.parse resp.body)
+
+        it 'has value 49', ->
+          (JSON.parse resp.body)[0]['num*num'].should.equal 49
+
+    describe 'without a publishing token set in scraperwiki.json', ->
+      before (done) ->
+        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", done
+
+      it "404s if a token is used", (done) ->
+        request.get { uri: "#{baseurl}/#{boxname}/0123456789/sqlite/", qs: options.qs }, (err, r, body) ->
+          r.should.have.status 404
+          done()
+
+      it "allows access", (done) ->
+        request.get { uri: "#{baseurl}/#{boxname}/sqlite/", qs: options.qs }, (err, r, body) ->
+          r.should.have.status 200
+          done()
