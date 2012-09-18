@@ -7,13 +7,20 @@ a sandboxed environment.
 ### Dependencies ###
 
 5 git repositories are needed (cobalt, lithium, swops, swops-secret, deployment-hooks).
-They should be cloned side-by-side.  Pick a new directory if you want.
+They should be cloned side-by-side.
 
     git clone git@github.com:scraperwiki/swops-secret.git
     git clone git@github.com:scraperwiki/lithium.git
     git clone git@github.com:scraperwiki/cobalt.git
     git clone git@github.com:scraperwiki/swops.git
 
+You can do this from a directory that isn't your home directory, but you'll need to
+symlink the keyfile in swops-secret and set permissions:
+
+    mkdir ~/swops-secret
+    ln swops-secret/id_dsa ~/swops-secret/id_dsa
+    chmod 0600 ~/swops-secret/id_dsa
+    
 Lithium and Cobalt both have their own dependencies for Node
 packages. You'll need to install them when you first clone, and then
 every now and then as the dependencies change.  The *first* time
@@ -50,9 +57,14 @@ To run the unit tests:
     . ./activate
     mocha
 
-To run the integration tests:
+To get the integration server to pull the most recent changes:
 
+    li sh boxecutor-int-test-0 "cd /opt/cobalt && git pull && service cobalt restart"
+
+and to run the integration tests:
+    
     mocha integration_test
 
 integration_test/cobalt.coffee has the host name that the integration tests
 are run on hardwired into it. Its key is in swops-secret.
+

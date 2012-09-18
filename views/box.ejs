@@ -18,7 +18,11 @@
     "The box can server static files in public. Put them in a",
     "directory called http/ inside the box. They will be served",
     "here (over either http or https):",
+    <% if (publish_token) { %>
+    "https://<%= server_hostname %>/<%= box_name %>/<%= publish_token %>/http",
+    <% } else { %>
     "https://<%= server_hostname %>/<%= box_name %>/http",
+    <% } %>
     "",
     "d) Scheduling",
     "Set a crontab using the crontab(1) command just like on any Unix.",
@@ -28,13 +32,23 @@
     "Specify the name of an SQLite file by adding an entry",
     "'database' in scraperwiki.json. You can then query the",
     "database with SQL over HTTP to get JSON using this URL:",
+    <% if (publish_token) { %>
+    "https://<%= server_hostname %>/<%= box_name %>/<%= publish_token %>/sqlite",
+    <% } else { %>
     "https://<%= server_hostname %>/<%= box_name %>/sqlite",
+    <% } %>
     "Parameters are:",
     "q= SQL query to execute",
     "callback= (optional) return results as JSONP of specified variable",
     "",
     "f) Read only file API",
     "Specify the file's path you want to read by using this URL:",
-    "https://<%= server_hostname %>/<%= box_name %>/files/<file path>?apikey=<apikey>"
+    "https://<%= server_hostname %>/<%= box_name %>/files/<file path>?apikey=<apikey>",
+    "",
+    "g) Restrict access to your data using a publishing token",
+    "By default, a publish_token is generated, which is required to access your",
+    "http files or sqlite API. If you would like to disable or edit this,",
+    "remove the publish_token field from your scraperwiki.json",
+    "The token must be alphanumeric and between 10-30 characters"
   ]
 }

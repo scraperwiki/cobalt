@@ -57,7 +57,8 @@ furnish_as_user() {
   # Slightly hairy shell, because the .json file cannot end in a
   # newline.
   printf > scraperwiki.json "%s" "$(cat <<EOF
-{}
+{"database"     :"scraperwiki.sqlite",
+ "publish_token":"$(uuidgen | tr -d - | cut -c-15)"}
 EOF
 )"
 
@@ -66,8 +67,8 @@ EOF
 ScraperWiki box $(whoami)
 
 This is the README.md file for your box.
-
 =======
+
 We recommend that you edit this file and describe your box.
 EOF
 

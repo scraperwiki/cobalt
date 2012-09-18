@@ -41,6 +41,30 @@ app.all "*", (req, res, next) ->
 # Templating language
 app.set('view engine', 'ejs')
 
+parse_settings = (text) ->
+  try
+    settings = JSON.parse text
+    return false unless typeof(settings) is 'object'
+    return settings
+  catch e
+    return false
+
+box_settings = (box_name, callback) ->
+  fs.readFile "/home/#{box_name}/scraperwiki.json", 'utf-8', (err, data) ->
+    settings = parse_settings data
+    callback 'not json', {} if not settings
+    callback null, settings if not err?
+    callback err, {} if err?
+
+check_auth = (apikey, org, callback) ->
+  url = "https://scraperwiki.com/froth/check_key/#{apikey}"
+  request.get url, (err, resp, body) ->
+    body = JSON.parse body
+    if resp.statusCode is 200 and org is body.org
+      callback true
+    else
+      callback false
+
 # TODO: should this be middleware?
 # Check if scraperwiki currently recognises the api key
 # If fails, check if that apikey has been valid in the past for box creation
@@ -48,16 +72,13 @@ check_api_key = (req, res, next) ->
   res.header('Content-Type', 'application/json')
   apikey = req.body.apikey or req.query.apikey
   if apikey?
-    url = "https://scraperwiki.com/froth/check_key/#{apikey}"
-    request.get url, (err, resp, body) ->
-      body = JSON.parse body
-      if resp.statusCode is 200 and req.params.org is body.org
+    check_auth apikey, req.params.org, (authorised) ->
+      if authorised
         return next()
       else
         return res.send {error: "Unauthorised"}, 403
   else
     return res.send {error: "No API key supplied"}, 403
-
 
 # GET REQUESTS
 # These should all be idempotent, i.e. make no changes to the server.
@@ -70,12 +91,15 @@ app.get "/", (req, res) ->
 app.get "/:org/:project/?", (req, res) ->
   box_name = req.params.org + '/' + req.params.project
   res.header('Content-Type', 'application/json')
-  Box.findOne {name: box_name}, (err, box) ->
-    return res.send { error: "Box not found" }, 404 unless box?
-    res.render 'box',
-      box_name: box_name
-      rooturl: root_url
-      server_hostname: server_hostname
+  check_auth req.query.apikey, req.params.org, (authorised) ->
+    Box.findOne {name: box_name}, (err, box) ->
+      return res.send { error: "Box not found" }, 404 unless box?
+      box_settings box_name, (err, settings) ->
+        res.render 'box',
+          box_name: box_name
+          rooturl: root_url
+          server_hostname: server_hostname
+          publish_token: if authorised and settings.publish_token then settings.publish_token else undefined
 
 # Get file
 app.get "/:org/:project/files/*", check_api_key
