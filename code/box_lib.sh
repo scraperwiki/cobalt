@@ -51,9 +51,6 @@ furnish_as_user() {
   # Go home.  Note: We're not chrooted.
   cd /home/"$BOXNAME"
 
-  # Initiate git repository.
-  git init .
-
   # scraperwiki.json file
   # Slightly hairy shell, because the .json file cannot end in a
   # newline.
@@ -73,6 +70,11 @@ https://box.scraperwiki.com/$BOXNAME
 
 Describe your box in here!
 EOF
+
+  # Initiate git repository.
+  git init .
+  git add README.md
+  git commit -m "Box created" --author="Scraperwiki <developers@scraperwiki.com>"
 
   # create public http directory
   mkdir /home/$BOXNAME/http
