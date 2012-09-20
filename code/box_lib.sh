@@ -46,9 +46,10 @@ furnish_box() {
 furnish_as_user() {
   # We can assume that this function is called from within an
   # 'su', so any changes to cd etc will be undone when we finish.
+  BOXNAME="$(whoami)"
 
   # Go home.  Note: We're not chrooted.
-  cd /home/"$(whoami)"
+  cd /home/"$BOXNAME"
 
   # Initiate git repository.
   git init .
@@ -57,23 +58,24 @@ furnish_as_user() {
   # Slightly hairy shell, because the .json file cannot end in a
   # newline.
   printf > scraperwiki.json "%s" "$(cat <<EOF
-{"database"     :"scraperwiki.sqlite",
- "publish_token":"$(uuidgen | tr -d - | cut -c-15)"}
+{
+  "database"      : "scraperwiki.sqlite",
+  "publish_token" : "$(uuidgen | tr -d - | cut -c-15)"
+}
 EOF
 )"
 
   # README.md
   cat > README.md <<EOF
-ScraperWiki box $(whoami)
+# ScraperWiki Box: $BOXNAME #
 
-This is the README.md file for your box.
-=======
+https://box.scraperwiki.com/$BOXNAME
 
-We recommend that you edit this file and describe your box.
+Describe your box in here!
 EOF
 
   # create public http directory
-  mkdir /home/$(whoami)/http
+  mkdir /home/$BOXNAME/http
 
 }
 
