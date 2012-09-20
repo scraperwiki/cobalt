@@ -1,0 +1,55 @@
+cat <<EOF
+## Home directory
+.bash_history
+.cache
+.ssh
+.sqlite_history
+.lesshst
+scraperwiki.sqlite
+
+## EDITORS
+.viminfo
+.vim
+*.sw[po]
+.joe_state
+.nano_history
+.emacs.d
+
+## NODE
+npm-debug.log
+.npm
+
+## PYTHON
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+.pip
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+
+# Installer logs
+pip-log.txt
+
+## RUBY
+
+.gem
+*.gem
+*.rbc
+.bundle
+rdoc
+tmp
+EOF
+
