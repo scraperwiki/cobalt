@@ -84,17 +84,21 @@ describe 'Integration testing', ->
         settings.publish_token.should.match /[0-9a-z]{15}/
         done()
 
-    it 'I can see my README.md', (done) ->
-      ssh_cmd "ls ~/README.md", (err, stdout, stderr) ->
+    it 'I have a README.md with the box URL in', (done) ->
+      ssh_cmd "cat ~/README.md", (err, stdout, stderr) ->
         should.not.exist err
         stderr.should.be.empty
+        stdout.should.include "https://box.scraperwiki.com/#{boxname}"
         done()
 
-    it 'I can see my git repo', (done) ->
-      ssh_cmd "git status", (err, stdout, stderr) ->
+    it 'I have a git repo with a default .gitignore and initial commit', (done) ->
+      ssh_cmd "git log", (err, stdout, stderr) ->
         should.not.exist err
         stderr.should.be.empty
-        done()
+        ssh_cmd "git show README.md .gitignore", (err, stdout, stderr) ->
+          should.not.exist err
+          stderr.should.be.empty
+          done()
 
     it "I cannot see any other box (i.e. I'm chrooted)", (done) ->
       ssh_cmd "ls -di", (err, stdout, stderr) ->
@@ -155,7 +159,7 @@ describe 'Integration testing', ->
             qs:
               apikey: cobalt_api_key
         request.get options, (err, resp, body) ->
-          body.should.match /This is the README\.md file/
+          body.should.include "# ScraperWiki Box: #{boxname} #"
           resp.should.have.status 200
           done()
 

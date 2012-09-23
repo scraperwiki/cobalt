@@ -46,34 +46,28 @@ furnish_box() {
 furnish_as_user() {
   # We can assume that this function is called from within an
   # 'su', so any changes to cd etc will be undone when we finish.
+  BOXNAME="$(whoami)"
+  TEMPLATES=/opt/cobalt/code/templates
 
   # Go home.  Note: We're not chrooted.
-  cd /home/"$(whoami)"
-
-  # Initiate git repository.
-  git init .
+  cd /home/"$BOXNAME"
 
   # scraperwiki.json file
   # Slightly hairy shell, because the .json file cannot end in a
   # newline.
-  printf > scraperwiki.json "%s" "$(cat <<EOF
-{"database"     :"scraperwiki.sqlite",
- "publish_token":"$(uuidgen | tr -d - | cut -c-15)"}
-EOF
-)"
+  sh $TEMPLATES/scraperwiki.json.template > scraperwiki.json
 
   # README.md
-  cat > README.md <<EOF
-ScraperWiki box $(whoami)
+  sh $TEMPLATES/README.md.template $BOXNAME > README.md
 
-This is the README.md file for your box.
-=======
-
-We recommend that you edit this file and describe your box.
-EOF
+  # Initiate git repository.
+  git init .
+  sh $TEMPLATES/gitignore.template > .gitignore
+  git add README.md .gitignore
+  git commit -m "Box created" --author="Scraperwiki <developers@scraperwiki.com>"
 
   # create public http directory
-  mkdir /home/$(whoami)/http
+  mkdir /home/$BOXNAME/http
 
 }
 
