@@ -35,10 +35,11 @@ mongoose.connect process.env['COBALT_DB']
 
 server_hostname = ''
 root_url = ''
+port = process.env.COBALT_PORT
 app.all "*", (req, res, next) ->
   server_hostname = req.header('host')
   root_url = "http://#{server_hostname}"
-  root_url = root_url + ":#{process.env.COBALT_PORT}" unless process.env.COBALT_PORT == '8000'
+  root_url = root_url + ":#{process.env.COBALT_PORT}" unless (port == '8000' || isNaN(parseInt(port)))
   next()
 
 # Templating language
@@ -188,9 +189,7 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
           child_process.exec "chown #{box.name}: #{keys_path}" # insecure
           return res.send {"status": "ok"}
 
-port = process.env.COBALT_PORT
 app.listen port
-
 if path.existsSync(port) && fs.lstatSync(port).isSocket()
   fs.chmodSync port, 0o600
   child_process.exec "chown www-data #{port}"
