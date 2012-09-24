@@ -4,6 +4,9 @@
 # http server for cobalt.
 
 fs      = require 'fs'
+# Only used for existsSync, can be removed when update to node vsn
+# with existsSync in the fs module
+path    = require 'path'
 child_process = require 'child_process'
 os      = require 'os'
 
@@ -185,7 +188,13 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
           child_process.exec "chown #{box.name}: #{keys_path}" # insecure
           return res.send {"status": "ok"}
 
-app.listen process.env.COBALT_PORT
+port = process.env.COBALT_PORT
+app.listen port
+
+if path.existsSync(port) && fs.lstatSync(port).isSocket()
+  fs.chmodSync port, 0o600
+  child_process.exec "chown www-data #{port}"
+
 
 exports.unix_user_add = (box_name, callback) ->
   cmd = """
