@@ -14,25 +14,33 @@ cobalt_api_key = process.env.COTEST_USER_API_KEY
 boxname = 'cotest/' + String(Math.random()).replace(/\./,'')
 sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
 sshkey_prv_path =  "../swops-secret/cotest-rsa"
+sshkey_prv_path_root = "../swops-secret/id_dsa"
 fs.chmodSync sshkey_prv_path, 0o600
 
 ssh_args = [
-  "-o User=#{boxname}",
   "-o LogLevel=ERROR",
   "-o UserKnownHostsFile=/dev/null",
   "-o StrictHostKeyChecking=no",
   "-o IdentitiesOnly=yes",
   "-o PreferredAuthentications=publickey",
-  "-i #{sshkey_prv_path}"
 ]
 
+ssh_root_args = [ "-o User=root", "-i #{sshkey_prv_path_root}" ].concat(ssh_args)
+
+ssh_user_args = [ "-o User=#{boxname}", "-i #{sshkey_prv_path}" ].concat(ssh_args)
+
 ssh_cmd = (cmd, callback) ->
-  ssh = "ssh #{ssh_args.join ' '} #{host} '#{cmd}'"
+  ssh = "ssh #{ssh_user_args.join ' '} #{host} '#{cmd}'"
+  exec ssh, (err, stdout, stderr) ->
+   callback err, stdout, stderr
+
+ssh_cmd_root = (cmd, callback) ->
+  ssh = "ssh #{ssh_root_args.join ' '} #{host} '#{cmd}'"
   exec ssh, (err, stdout, stderr) ->
    callback err, stdout, stderr
 
 scp_cmd = (file_path, file_name, callback) ->
-  scp = "scp #{ssh_args.join ' '} #{file_path} #{host}:#{file_name}"
+  scp = "scp #{ssh_user_args.join ' '} #{file_path} #{host}:#{file_name}"
   exec scp, (err, stdout, stderr) ->
     callback err, stdout, stderr
 
@@ -266,4 +274,21 @@ describe 'Integration testing', ->
       it "allows access", (done) ->
         request.get { uri: "#{baseurl}/#{boxname}/sqlite/", qs: options.qs }, (err, r, body) ->
           r.should.have.status 200
+          done()
+
+
+  describe 'When Cobalt has started', ->
+    before (done) ->
+      ssh_cmd_root "service cobalt stop && rm -f /var/run/cobalt.socket && service cobalt start", done
+
+    describe "the created unix socket", ->
+
+      it "is listened to by Cobalt", (done) ->
+        ssh_cmd_root "netstat -a | grep cobalt", (err, stdout, stderr) -> 
+          stdout.should.include "/var/run/cobalt.socket"
+          done()
+
+      it "has the right permissions", (done) ->
+        ssh_cmd_root "stat -c \"%U %a\" /var/run/cobalt.socket", (err, stdout, stderr) ->
+          stdout.should.equal "www-data 600\n"
           done()
