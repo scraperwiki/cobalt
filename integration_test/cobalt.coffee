@@ -280,7 +280,7 @@ describe 'Integration testing', ->
 
   describe 'When Cobalt has started', ->
     before (done) ->
-      ssh_cmd_root "service cobalt stop && rm -f /var/run/cobalt.socket && service cobalt start", done
+      ssh_cmd_root "service cobalt stop && rm -f /var/run/cobalt.socket && service cobalt start && sleep 2", done
 
     describe "the created unix socket", ->
 
