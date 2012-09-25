@@ -16,6 +16,7 @@ sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
 sshkey_prv_path =  "../swops-secret/cotest-rsa"
 sshkey_prv_path_root = "../swops-secret/id_dsa"
 fs.chmodSync sshkey_prv_path, 0o600
+fs.chmodSync sshkey_prv_path_root, 0o600
 
 ssh_args = [
   "-o LogLevel=ERROR",
