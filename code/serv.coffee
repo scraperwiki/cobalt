@@ -186,8 +186,9 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
           fs.writeFileSync keys_path, keys.join '\n', 'utf8'
           # Note: octal.  This is deliberate.
           fs.chmodSync keys_path, 0o600
-          child_process.exec "chown #{box.name}: #{keys_path}" # insecure
-          return res.send {"status": "ok"}
+          child_process.exec "chown #{box.name}: #{keys_path}", (err, stdout, stderr) -> # insecure
+            return res.send {"status": "ok"} if not (err? or stderr?)
+            return res.send {"error": "Internal creation error"}
 
 app.listen port
 if path.existsSync(port) && fs.lstatSync(port).isSocket()
