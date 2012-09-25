@@ -6,7 +6,7 @@ a sandboxed environment.
 
 ### Dependencies ###
 
-5 git repositories are needed (cobalt, lithium, swops, swops-secret, deployment-hooks).
+5 git repositories are needed (cobalt, lithium, swops, swops-secret).
 They should be cloned side-by-side.
 
     git clone git@github.com:scraperwiki/swops-secret.git
@@ -36,7 +36,7 @@ Running this when you don't need to is fine – it doesn't take very long.
 
 Don't forget to sync your repositories:
 
-    for d in lithium cobalt swops swops-secret deployment-hooks; do ( cd $d; git pull ) done
+    for d in lithium cobalt swops swops-secret; do ( cd $d; git pull ) done
 
 (you need to 'npm install' every now and then too, but you won't
 generally need to use the '-f' option (see above))
