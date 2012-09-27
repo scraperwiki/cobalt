@@ -6,11 +6,23 @@ create_user() {
   USERNAME="$1"
 
   # Create the user
-  useradd  -g databox -s /bin/bash --home /home "${USERNAME}"
+  max_uid=$(awk -F: '{print $3}' /etc/passwd | sort -n | tail -1)
+  uid=$(($max_uid + 1))
+  gid=$(awk -F: '/^databox:/{print $3}' /etc/group)
+  passwd_row="${USERNAME}:x:${uid}:${gid}::/home:/bin/bash"
+  shadow_row="${USERNAME}:x:15607:0:99999:7:::"
+  (
+    flock -w 2 9 || exit 99
+    { cat /shared_etc/passwd ; echo "$passwd_row" ; } > /shared_etc/passwd+
+    mv /shared_etc/passwd+ /shared_etc/passwd
+    { cat /shared_etc/shadow ; echo "$shadow_row" ; } > /shared_etc/shadow+
+    mv /shared_etc/shadow+ /shared_etc/shadow
+  ) 9>/shared_etc/passwd.cobalt.lock
 }
 
 delete_user() {
-  userdel "$1"
+  # To be implemented
+  :
 }
 
 create_user_directories() {

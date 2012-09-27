@@ -50,7 +50,7 @@ describe 'SSH keys:', ->
       #write_stub = sinon.stub fs, 'writeFile', (_p, _t, _e, cb) -> cb()
       write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys"
       chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys", (parseInt '0600', 8)
-      chown_stub = sinon.stub(child_process, 'exec').withArgs "chown kiteorg/newdatabox: /opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys"
+      chown_stub = sinon.stub(child_process, 'exec').withArgs("chown kiteorg/newdatabox: /opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys").callsArg(1)
 
     it 'returns an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
