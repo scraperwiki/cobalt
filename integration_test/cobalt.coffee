@@ -163,7 +163,7 @@ describe 'Integration testing', ->
               done()
 
     describe "...files API...", ->
-      it 'I can see my my README.md file using the files API', (done) ->
+      it 'I can see my README.md file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/README.md"
             qs:
@@ -173,7 +173,7 @@ describe 'Integration testing', ->
           resp.should.have.status 200
           done()
 
-      it 'I can see my my index.html file using the files API', (done) ->
+      it 'I can see my index.html file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/http/index.html"
             qs:
