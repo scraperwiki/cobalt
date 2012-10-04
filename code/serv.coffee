@@ -112,7 +112,8 @@ app.get "/:org/:project/files/*", check_api_key
 app.get "/:org/:project/files/*", (req, res) ->
   res.removeHeader('Content-Type')
   user_name = req.params.org + '.' + req.params.project
-  path = req.path.replace "/#{user_name}/files", ''
+  box_name = req.params.org + '/' + req.params.project
+  path = req.path.replace "/#{box_name}/files", ''
   path = path.replace /\'/g, ''
   user_name = user_name.replace /\'/g, ''
   su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{user_name}"]
