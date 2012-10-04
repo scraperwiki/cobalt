@@ -12,6 +12,7 @@ baseurl = "http://#{host}"
 
 cobalt_api_key = process.env.COTEST_USER_API_KEY
 boxname = 'cotest/' + String(Math.random()).replace(/\./,'')
+ssh_boxname = boxname.replace('/', '.')
 sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
 sshkey_prv_path =  "../swops-secret/cotest-rsa"
 sshkey_prv_path_root = "../swops-secret/id_dsa"
@@ -28,7 +29,7 @@ ssh_args = [
 
 ssh_root_args = [ "-o User=root", "-i #{sshkey_prv_path_root}" ].concat(ssh_args)
 
-ssh_user_args = [ "-o User=#{boxname}", "-i #{sshkey_prv_path}" ].concat(ssh_args)
+ssh_user_args = [ "-o User=#{ssh_boxname}", "-i #{sshkey_prv_path}" ].concat(ssh_args)
 
 ssh_cmd = (cmd, callback) ->
   ssh = "ssh #{ssh_user_args.join ' '} #{host} '#{cmd}'"

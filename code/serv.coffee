@@ -53,8 +53,8 @@ parse_settings = (text) ->
   catch e
     return false
 
-box_settings = (box_name, callback) ->
-  fs.readFile "/home/#{box_name}/scraperwiki.json", 'utf-8', (err, data) ->
+box_settings = (user_name, callback) ->
+  fs.readFile "/home/#{user_name}/scraperwiki.json", 'utf-8', (err, data) ->
     settings = parse_settings data
     callback 'not json', {} if not settings
     callback null, settings if not err?
@@ -93,6 +93,7 @@ app.get "/", (req, res) ->
 
 # Documentation for SSHing to a box.
 app.get "/:org/:project/?", (req, res) ->
+  user_name = req.params.org + '.' + req.params.project
   box_name = req.params.org + '/' + req.params.project
   res.header('Content-Type', 'application/json')
   check_auth req.query.apikey, req.params.org, (authorised) ->
@@ -100,6 +101,7 @@ app.get "/:org/:project/?", (req, res) ->
       return res.send { error: "Box not found" }, 404 unless box?
       box_settings box_name, (err, settings) ->
         res.render 'box',
+          user_name: user_name
           box_name: box_name
           rooturl: root_url
           server_hostname: server_hostname
@@ -109,11 +111,11 @@ app.get "/:org/:project/?", (req, res) ->
 app.get "/:org/:project/files/*", check_api_key
 app.get "/:org/:project/files/*", (req, res) ->
   res.removeHeader('Content-Type')
-  box_name = req.params.org + '/' + req.params.project
-  path = req.path.replace "/#{box_name}/files", ''
+  user_name = req.params.org + '.' + req.params.project
+  path = req.path.replace "/#{user_name}/files", ''
   path = path.replace /\'/g, ''
-  box_name = box_name.replace /\'/g, ''
-  su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{box_name}"]
+  user_name = user_name.replace /\'/g, ''
+  su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{user_name}"]
   su.stdout.on 'data', (data) ->
       res.write data
   su.stderr.on 'data', (data) ->
@@ -131,6 +133,7 @@ app.post "/:org*", check_api_key
 # Create a box
 app.post "/:org/:project/?", (req, res) ->
   res.header('Content-Type', 'application/json')
+  user_name = req.params.org + '.' + req.params.project
   box_name = req.params.org + '/' + req.params.project
   re = /^[a-zA-Z0-9_+-]+\/[a-zA-Z0-9_+-]+$/
   if not re.test box_name
@@ -148,7 +151,7 @@ app.post "/:org/:project/?", (req, res) ->
             console.log "Creating box: #{err} "
             return res.send {error: "Unknown error"}
           else
-            exports.unix_user_add box_name, (err, stdout, stderr) ->
+            exports.unix_user_add user_name, (err, stdout, stderr) ->
               any_stderr = stderr is not ''
               console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
               return res.send {error: "Unable to create box"} if err? or any_stderr
@@ -156,6 +159,7 @@ app.post "/:org/:project/?", (req, res) ->
 
 # Add an SSH key to a box
 app.post "/:org/:project/sshkeys/?", (req, res) ->
+  user_name = req.params.org + '.' + req.params.project
   box_name = req.params.org + '/' + req.params.project
 
   res.header('Content-Type', 'application/json')
@@ -178,7 +182,7 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
 
       key.save ->
         SSHKey.find {box: box._id}, (err, sshkeys) ->
-          keys_path = "/opt/cobalt/etc/sshkeys/#{box.name}/authorized_keys"
+          keys_path = "/opt/cobalt/etc/sshkeys/#{user_name}/authorized_keys"
 
           keys = for key in sshkeys
             "#{key.key}"
@@ -186,7 +190,7 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
           fs.writeFileSync keys_path, keys.join '\n', 'utf8'
           # Note: octal.  This is deliberate.
           fs.chmodSync keys_path, 0o600
-          child_process.exec "chown #{box.name}: #{keys_path}", (err, stdout, stderr) -> # insecure
+          child_process.exec "chown #{user_name}: #{keys_path}", (err, stdout, stderr) -> # insecure
             return res.send {"status": "ok"} if not (err? or stderr?)
             return res.send {"error": "Internal creation error"}
 
@@ -196,13 +200,13 @@ if path.existsSync(port) && fs.lstatSync(port).isSocket()
   child_process.exec "chown www-data #{port}"
 
 
-exports.unix_user_add = (box_name, callback) ->
+exports.unix_user_add = (user_name, callback) ->
   cmd = """
         cd /opt/cobalt &&
         . ./code/box_lib.sh &&
-        create_user #{box_name} &&
-        create_user_directories #{box_name} &&
-        furnish_box #{box_name}
+        create_user #{user_name} &&
+        create_user_directories #{user_name} &&
+        furnish_box #{user_name}
         """
-  # insecure - sanitise box_name
+  # insecure - sanitise user_name
   exec cmd, callback

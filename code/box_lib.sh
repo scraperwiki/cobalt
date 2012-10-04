@@ -41,11 +41,6 @@ create_user_directories() {
   mv /opt/basejail/etc/passwd-inflight /opt/basejail/etc/passwd
 
   mkdir -p "/opt/cobalt/etc/sshkeys/${USERNAME}"
-  ORG=$(dirname "$USERNAME")
-  CRON_TAB_DIR="/var/spool/cron/crontabs/${ORG}"
-  mkdir -p ${CRON_TAB_DIR}
-  chmod 1730 ${CRON_TAB_DIR}
-  chown :crontab ${CRON_TAB_DIR}
 }
 
 furnish_box() {
@@ -70,7 +65,8 @@ furnish_as_user() {
   sh $TEMPLATES/scraperwiki.json.template > scraperwiki.json
 
   # README.md
-  sh $TEMPLATES/README.md.template $BOXNAME > README.md
+  asURL=$(echo $BOXNAME|sed 's/\./\//')
+  sh $TEMPLATES/README.md.template $asURL > README.md
 
   # Initiate git repository.
   git init .
@@ -79,7 +75,7 @@ furnish_as_user() {
   git commit -m "Box created" --author="Scraperwiki <developers@scraperwiki.com>"
 
   # create public http directory
-  mkdir /home/$BOXNAME/http
+  mkdir http
 
 }
 
