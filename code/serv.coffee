@@ -192,7 +192,8 @@ app.post "/:org/:project/sshkeys/?", (req, res) ->
           # Note: octal.  This is deliberate.
           fs.chmodSync keys_path, 0o600
           child_process.exec "chown #{user_name}: #{keys_path}", (err, stdout, stderr) -> # insecure
-            return res.send {"status": "ok"} if not (err? or stderr?)
+            return res.send {"status": "ok"} unless err
+            console.log "ERROR: #{err}, stderr: #{stderr}"
             return res.send {"error": "Internal creation error"}
 
 app.listen port
