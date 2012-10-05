@@ -86,6 +86,12 @@ describe 'Integration testing', ->
         err.code.should.equal 99
         done()
 
+    it 'SFTP works', (done) ->
+      ssh = "echo ls | sftp  #{ssh_user_args.join ' '} #{host}"
+      exec ssh, (err, stdout, stderr) ->
+        should.not.exist err
+        done()
+
     it 'I have some default values in scraperwiki.json', (done) ->
       ssh_cmd "cat ~/scraperwiki.json", (err, stdout, stderr) ->
         settings = JSON.parse(stdout)
