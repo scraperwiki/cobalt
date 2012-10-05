@@ -12,6 +12,7 @@ baseurl = "http://#{host}"
 
 cobalt_api_key = process.env.COTEST_USER_API_KEY
 boxname = 'cotest/' + String(Math.random()).replace(/\./,'')
+ssh_boxname = boxname.replace('/', '.')
 sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
 sshkey_prv_path =  "../swops-secret/cotest-rsa"
 sshkey_prv_path_root = "../swops-secret/id_dsa"
@@ -28,7 +29,7 @@ ssh_args = [
 
 ssh_root_args = [ "-o User=root", "-i #{sshkey_prv_path_root}" ].concat(ssh_args)
 
-ssh_user_args = [ "-o User=#{boxname}", "-i #{sshkey_prv_path}" ].concat(ssh_args)
+ssh_user_args = [ "-o User=#{ssh_boxname}", "-i #{sshkey_prv_path}" ].concat(ssh_args)
 
 ssh_cmd = (cmd, callback) ->
   ssh = "ssh #{ssh_user_args.join ' '} #{host} '#{cmd}'"
@@ -168,7 +169,7 @@ describe 'Integration testing', ->
               done()
 
     describe "...files API...", ->
-      it 'I can see my my README.md file using the files API', (done) ->
+      it 'I can see my README.md file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/README.md"
             qs:
@@ -178,7 +179,7 @@ describe 'Integration testing', ->
           resp.should.have.status 200
           done()
 
-      it 'I can see my my index.html file using the files API', (done) ->
+      it 'I can see my index.html file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/http/index.html"
             qs:
