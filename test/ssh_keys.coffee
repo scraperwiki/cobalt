@@ -1,31 +1,41 @@
 # basic.coffee
 
+child_process = require 'child_process'
+fs     = require 'fs'
 http = require 'http'
+
+# https://github.com/flatiron/nock
+nock   = require 'nock'
 # https://github.com/mikeal/request
 request = require 'request'
+# https://github.com/visionmedia/should.js/
 should = require 'should'
-nock   = require 'nock'
+# http://sinonjs.org/docs/
 sinon  = require 'sinon'
-fs     = require 'fs'
-child_process = require 'child_process'
+# http://underscorejs.org/
 _ = require 'underscore'
 
 User = require 'models/user'
 Box = require 'models/box'
 SSHKey = require 'models/ssh_key'
 
+nocks = require '../test/nocks'
+
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 BASE_URL = 'http://127.0.0.1:3000/'
 apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
 describe 'SSH keys:', ->
-  describe '( POST /<box_name>/sshkeys )', ->
+  after ->
+    nock.cleanAll()
+
+  describe '( POST /<org>/<project>/sshkeys )', ->
     server = null
     mongoose = null
     write_stub = null
     chmod_stub = null
-    URL = "#{BASE_URL}newdatabox/sshkeys"
-
+    URL = "#{BASE_URL}kiteorg/newdatabox/sshkeys"
+ 
     before (done) ->
       server = require 'serv'
       mongoose = require 'mongoose'
@@ -34,19 +44,23 @@ describe 'SSH keys:', ->
       Box.collection.drop()
       new User({apikey: apikey}).save()
       User.findOne {apikey: apikey}, (err, user) ->
-        new Box({user: user._id, name: 'newdatabox'}).save()
+        new Box({user: user._id, name: 'kiteorg/newdatabox'}).save()
         SSHKey.collection.drop()
         done()
       #write_stub = sinon.stub fs, 'writeFile', (_p, _t, _e, cb) -> cb()
-      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
-      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", (parseInt '0600', 8)
-      chown_stub = sinon.stub(child_process, 'exec').withArgs "chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
+      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys"
+      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys", (parseInt '0600', 8)
+      chown_stub = sinon.stub(child_process, 'exec').withArgs("chown kiteorg/newdatabox: /opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys").callsArg(1)
 
     it 'returns an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
         resp.statusCode.should.equal 403
-        (_.isEqual (JSON.parse resp.body), {"error":"No API key supplied"}).should.be.true
         done()
+
+    after ->
+      fs.writeFileSync.restore()
+      fs.chmodSync.restore()
+      child_process.exec.restore()
 
     describe 'when the apikey is valid and box exists', ->
       froth = null
@@ -58,9 +72,7 @@ describe 'SSH keys:', ->
         """
 
       before (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        froth = nocks.success apikey
 
         options =
           uri: URL
@@ -93,9 +105,7 @@ describe 'SSH keys:', ->
 
     describe 'when the apikey is invalid', ->
       before ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/junk")
-        .reply 403, "403", { 'content-type': 'text/plain' }
+        froth = nocks.forbidden
 
       it 'returns an error', (done) ->
         options =
@@ -113,10 +123,7 @@ describe 'SSH keys:', ->
       before ->
         apikey2 = 'otheruserapikey'
         new User({apikey: apikey2}).save()
-
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/otheruserapikey")
-        .reply 200, "200", { 'content-type': 'text/plain' }
+        froth = nocks.success 'otheruserapikey'
 
       it 'returns an error', (done) ->
         options =
@@ -133,10 +140,7 @@ describe 'SSH keys:', ->
     describe "when the box doesn't exist", ->
       response = null
       before (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-
+        froth = nocks.success apikey
         options =
           uri: URL
           form:
@@ -158,10 +162,7 @@ describe 'SSH keys:', ->
       response = null
 
       before (done) ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-
+        froth = nocks.success apikey
         options =
           uri: URL
           form:
@@ -175,14 +176,8 @@ describe 'SSH keys:', ->
         (_.isEqual (JSON.parse response.body), {"error":"SSH Key not specified"}).should.be.true
 
     describe "when sshkey isn't valid", ->
-      before ->
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-        froth = nock('https://scraperwiki.com')
-        .get("/froth/check_key/#{apikey}")
-        .reply 200, "200", { 'content-type': 'text/plain' }
-
+      beforeEach ->
+        froth = nocks.success apikey
 
       # do we need this now?
       it 'returns an error if completely invalid', (done) ->

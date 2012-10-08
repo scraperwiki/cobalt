@@ -1,11 +1,16 @@
 {
   "status": "ok",
   "message": [
-    "Get an API key from your ScraperWiki profile settings page:",
+    "Boxes are Unix shell accounts, one for each project.",
+    "",
+    "1) Get an API key from your ScraperWiki profile settings page:",
     "https://scraperwiki.com/profiles/edit",
-    "To create a box:",
-    "curl --data apikey=<apikey> <%= rooturl %>/<boxname>",
-    "The box will be at <%= rooturl %>/<boxname>."
-    "It will be furnished with a git repository in the /home/ directory, a readme.md file for describing your project and a sw.json file for configuring your project."
+    "",
+    "2) To create a box:",
+    "curl --data apikey=<apikey> <%= rooturl %>/<org>/<project>",
+    "<org> is your ScraperWiki user name.",
+    "<project> is the name of the specific box.",
+    "The box will be at <%= rooturl %>/<org>/<project>.",
+    "You can find its API and documentation there."
   ]
 }
