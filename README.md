@@ -41,6 +41,11 @@ You need to set up the environment and so on:
     . ../swops-secret/keys.sh
     . ./activate
 
+swops-secret actually needs to be in `$HOME`. Do this to make sure it is.
+
+    cd ../swops-secret
+    ./install.sh
+
 ### Using Lithium ###
 
 Using lithium spends money.  Not much.
