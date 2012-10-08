@@ -283,6 +283,12 @@ describe 'Integration testing', ->
         request.get { uri: "#{baseurl}/#{boxname}/sqlite/", qs: options.qs }, (err, r, body) ->
           r.should.have.status 200
           done()
+      it "does JSONP", (done) ->
+        qs = { q: options.qs.q, callback: 'ploq' }
+        request.get { uri: "#{baseurl}/#{boxname}/sqlite/", qs: qs }, (err, r, body) ->
+          r.should.have.status 200
+          should.exist body.match(/^ploq\(/)
+          done()
 
 
   describe 'When Cobalt has started', ->
