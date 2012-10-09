@@ -78,6 +78,14 @@ describe 'Box documentation', ->
         JSON.parse resp.body
         done()
 
+    it 'documents how to supply a callback parameter to the HTTP & SQLite endpoints', (done) ->
+      request.get {url:box_url}, (err, resp, body) ->
+        resp.statusCode.should.equal 200
+        resp.body.should.include 'JSONP'
+        resp.body.should.include 'callback'
+        JSON.parse resp.body
+        done()
+
     describe 'when the box has a publishing token set', ->
       beforeEach ->
         obj =
