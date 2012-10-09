@@ -48,9 +48,13 @@ You need to set up the environment and so on:
     cd lithium
     . ../swops-secret/keys.sh
     . ./activate
-    
-### Running Cobalt Tests ###
 
+swops-secret actually needs to be in `$HOME`. Do this to make sure it is.
+
+    cd ../swops-secret
+    ./install.sh
+
+### Running Cobalt Tests ###
 To run the unit tests:
 
     cd cobalt
