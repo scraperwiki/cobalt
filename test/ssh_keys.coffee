@@ -39,18 +39,19 @@ describe 'SSH keys:', ->
     before (done) ->
       server = require 'serv'
       mongoose = require 'mongoose'
+
+      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg.newdatabox/authorized_keys"
+      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg.newdatabox/authorized_keys", (parseInt '0600', 8)
+      chown_stub = sinon.stub(child_process, 'exec').withArgs("chown kiteorg.newdatabox: /opt/cobalt/etc/sshkeys/kiteorg.newdatabox/authorized_keys").callsArg(1)
+
       # TODO: icky, we want fixtures or mocking
-      User.collection.drop()
-      Box.collection.drop()
-      new User({apikey: apikey}).save()
-      User.findOne {apikey: apikey}, (err, user) ->
-        new Box({user: user._id, name: 'kiteorg/newdatabox'}).save()
-        SSHKey.collection.drop()
-        done()
-      #write_stub = sinon.stub fs, 'writeFile', (_p, _t, _e, cb) -> cb()
-      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys"
-      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys", (parseInt '0600', 8)
-      chown_stub = sinon.stub(child_process, 'exec').withArgs("chown kiteorg/newdatabox: /opt/cobalt/etc/sshkeys/kiteorg/newdatabox/authorized_keys").callsArg(1)
+      User.collection.drop ->
+        Box.collection.drop ->
+          new User({apikey: apikey}).save ->
+            User.findOne {apikey: apikey}, (err, user) ->
+              new Box({user: user._id, name: 'kiteorg/newdatabox'}).save ->
+                SSHKey.collection.drop ->
+                  done()
 
     it 'returns an error when adding ssh keys without an API key', (done) ->
       request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->

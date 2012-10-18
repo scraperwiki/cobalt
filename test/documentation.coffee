@@ -46,14 +46,14 @@ describe 'Box documentation', ->
   describe '( GET /<org>/<project> )', ->
 
     before (done) ->
-      User.collection.drop()
-      Box.collection.drop()
+      User.collection.drop ->
+        Box.collection.drop ->
 
-      new User({apikey: APIKEY}).save()
-      User.findOne {apikey: APIKEY}, (err, user) ->
-        console.log err if err
-        new Box({user: user._id, name: BOX}).save()
-        done()
+        new User({apikey: APIKEY}).save ->
+          User.findOne {apikey: APIKEY}, (err, user) ->
+            console.log err if err
+            new Box({user: user._id, name: BOX}).save ->
+              done()
 
     it 'documents how to SSH into a box', (done) ->
       request.get {url:box_url}, (err, resp, body) ->
