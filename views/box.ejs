@@ -15,7 +15,7 @@
     "and a scraperwiki.json file for configuring it.",
     "",
     "c) Web server",
-    "The box can server static files in public. Put them in a",
+    "The box can serve static files in public. Put them in a",
     "directory called http/ inside the box. They will be served",
     "here (over either http or https):",
     <% if (publish_token) { %>
@@ -23,6 +23,7 @@
     <% } else { %>
     "https://<%= server_hostname %>/<%= box_name %>/http",
     <% } %>
+    "You can serve JSON files as JSONP by appending a ?callback parameter to your request.",
     "",
     "d) Scheduling",
     "Set a crontab using the crontab(1) command just like on any Unix.",

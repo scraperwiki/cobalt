@@ -54,8 +54,16 @@ swops-secret actually needs to be in `$HOME`. Do this to make sure it is.
     cd ../swops-secret
     ./install.sh
 
+### Running Cobalt ###
+
+To run cobalt locally:
+
+    cd cobalt
+    . ./activate
+    coffee code/serv.coffee
+
 ### Running Cobalt Tests ###
-To run the unit tests:
+To run the unit tests (note that cobalt must be running):
 
     cd cobalt
     . ./activate
