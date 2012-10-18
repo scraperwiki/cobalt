@@ -124,6 +124,21 @@ app.get "/:org/:project/files/*", (req, res) ->
   su.on 'exit', (code) ->
       res.end()
 
+# Exec endpoint - see wiki for note about security
+app.post "/:org/:project/exec/?", check_api_key
+app.post "/:org/:project/exec/?", (req, res) ->
+  res.removeHeader 'Content-Type'
+  user_name = req.params.org + '.' + req.params.project
+  cmd = req.body.cmd
+  su = child_process.spawn "su", ["-c", "#{cmd}", "#{user_name}"]
+  su.stdout.on 'data', (data) ->
+          res.write data
+  su.stderr.on 'data', (data) ->
+          res.write data
+  su.on 'exit', (code) ->
+          res.end()
+
+
 
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database

@@ -189,6 +189,43 @@ describe 'Integration testing', ->
           resp.should.have.status 200
           done()
 
+    describe "...exec API...", ->
+      it 'I can cat my README.md', (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/exec"
+            form:
+              apikey: cobalt_api_key
+              cmd: "cat ~/README.md"
+        request.post options, (err, resp, body) ->
+          body.should.include "# ScraperWiki Box: #{boxname} #"
+          resp.should.have.status 200
+          done()
+
+      it 'I can write to a file', (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/exec"
+            form:
+              apikey: cobalt_api_key
+              cmd: "echo foo > ~/bar"
+        request.post options, (err, resp, body) ->
+          resp.should.have.status 200
+
+          ssh_cmd "cat ~/bar | sed s/foo/foobar/g", (err, stdout, stderr) ->
+            stdout.should.include 'foobar'
+            done()
+
+      it "I can't break the chroot", (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/exec"
+            form:
+              apikey: cobalt_api_key
+              cmd: "ls -di /;'ls -di /;''"
+        request.post options, (err, resp, body) ->
+          resp.should.have.status 200
+          body.should.not.include '2 /'
+          done()
+
+
 
     describe '...symlinks...', ->
       before (done) ->
@@ -298,7 +335,7 @@ describe 'Integration testing', ->
     describe "the created unix socket", ->
 
       it "is listened to by Cobalt", (done) ->
-        ssh_cmd_root "netstat -a | grep cobalt", (err, stdout, stderr) -> 
+        ssh_cmd_root "netstat -a | grep cobalt", (err, stdout, stderr) ->
           stdout.should.include "/var/run/cobalt.socket"
           done()
 
