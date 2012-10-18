@@ -27,11 +27,11 @@ describe 'Creating a box:', ->
 
     before (done) ->
       server = require 'serv'
-      User.collection.drop()
-      Box.collection.drop()
       exec_stub = sinon.stub server, 'unix_user_add', (_a, callback) ->
         callback null, null, null
-      done()
+
+      User.collection.drop ->
+        Box.collection.drop done
 
     it 'gives an error when creating a databox without a key', (done) ->
       u = baseurl + 'kiteorg/newdatabox'

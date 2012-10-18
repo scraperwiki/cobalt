@@ -155,23 +155,23 @@ app.post "/:org/:project/?", (req, res) ->
   if not re.test box_name
     return res.send {error:
       "Box name should match the regular expression #{String(re)}"}, 404
-  new User({apikey: req.body.apikey}).save()
-  User.findOne {apikey: req.body.apikey}, (err, user) ->
-    return res.send {error: "User not found" }, 404 unless user?
-    Box.findOne {name: box_name}, (err, box) ->
-      if box
-        return res.send {error: "Box already exists"}
-      else
-        new Box({user: user._id, name: box_name}).save (err) ->
-          if err
-            console.log "Creating box: #{err} "
-            return res.send {error: "Unknown error"}
-          else
-            exports.unix_user_add user_name, (err, stdout, stderr) ->
-              any_stderr = stderr is not ''
-              console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
-              return res.send {error: "Unable to create box"} if err? or any_stderr
-              return res.send {status: "ok"}
+  new User({apikey: req.body.apikey}).save (err) ->
+    User.findOne {apikey: req.body.apikey}, (err, user) ->
+      return res.send {error: "User not found" }, 404 unless user?
+      Box.findOne {name: box_name}, (err, box) ->
+        if box
+          return res.send {error: "Box already exists"}
+        else
+          new Box({user: user._id, name: box_name}).save (err) ->
+            if err
+              console.log "Creating box: #{err} "
+              return res.send {error: "Unknown error"}
+            else
+              exports.unix_user_add user_name, (err, stdout, stderr) ->
+                any_stderr = stderr is not ''
+                console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
+                return res.send {error: "Unable to create box"} if err? or any_stderr
+                return res.send {status: "ok"}
 
 # Add an SSH key to a box
 app.post "/:org/:project/sshkeys/?", (req, res) ->
