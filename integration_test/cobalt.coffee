@@ -225,6 +225,18 @@ describe 'Integration testing', ->
           body.should.not.include '2 /'
           done()
 
+      it "I can be sure that my process is killed after I disconnect", (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/exec"
+            timeout: 1000
+            form:
+              apikey: cobalt_api_key
+              cmd: "tail -f /dev/urandom"
+        request.post options, (err, resp, body) ->
+          ssh_cmd "ps aux", (err, stdout, stderr) ->
+            stdout.should.not.include 'urandom'
+            done()
+
 
 
     describe '...symlinks...', ->

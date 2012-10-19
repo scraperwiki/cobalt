@@ -138,6 +138,8 @@ app.post "/:org/:project/exec/?", (req, res) ->
   su.on 'exit', (code) ->
           res.end()
 
+  req.on 'end', -> su.kill()
+  req.on 'close', -> su.kill()
 
 
 # POST REQUESTS
