@@ -128,15 +128,17 @@ app.get "/:org/:project/files/*", (req, res) ->
 app.post "/:org/:project/exec/?", check_api_key
 app.post "/:org/:project/exec/?", (req, res) ->
   res.removeHeader 'Content-Type'
+  res.setHeader 'Trailer': 'X-Exit-Status'
   user_name = req.params.org + '.' + req.params.project
   cmd = req.body.cmd
   su = child_process.spawn "su", ["-c", "#{cmd}", "#{user_name}"]
   su.stdout.on 'data', (data) ->
-          res.write data
+    res.write data
   su.stderr.on 'data', (data) ->
-          res.write data
+    res.write data
   su.on 'exit', (code) ->
-          res.end()
+    res.addTrailer 'X-Exit-Status', "#{code}"
+    res.end()
 
   req.on 'end', -> su.kill()
   req.on 'close', -> su.kill()
