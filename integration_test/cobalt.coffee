@@ -179,6 +179,16 @@ describe 'Integration testing', ->
           resp.should.have.status 200
           done()
 
+      it 'I can see the X-Exit-Status header', (done) ->
+        options =
+            uri: "#{baseurl}/#{boxname}/files/README.md"
+            qs:
+              apikey: cobalt_api_key
+        request.get options, (err, resp, body) ->
+          should.exist resp.headers['X-Exit-Status']
+          resp.headers['X-Exit-Status'].should.equal 0
+          done()
+
       it 'I can see my index.html file using the files API', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/files/http/index.html"
