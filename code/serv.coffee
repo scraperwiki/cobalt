@@ -127,6 +127,7 @@ app.get "/:org/:project/files/*", (req, res) ->
 # Exec endpoint - see wiki for note about security
 app.post "/:org/:project/exec/?", check_api_key
 app.post "/:org/:project/exec/?", (req, res) ->
+  timelog "got POST exec #{req.params.org}/#{req.param.project} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
   res.setHeader 'Trailer': 'X-Exit-Status'
   user_name = req.params.org + '.' + req.params.project
@@ -150,8 +151,12 @@ app.post "/:org/:project/exec/?", (req, res) ->
 # Check API key for all org/project URLs
 app.post "/:org*", check_api_key
 
+timelog = (stuff) ->
+  console.log (new Date()).toISOString(), stuff
+
 # Create a box
 app.post "/:org/:project/?", (req, res) ->
+  timelog "got request create box #{req.params.org}/#{req.params.project}"
   res.header('Content-Type', 'application/json')
   user_name = req.params.org + '.' + req.params.project
   box_name = req.params.org + '/' + req.params.project
@@ -160,18 +165,23 @@ app.post "/:org/:project/?", (req, res) ->
     return res.send {error:
       "Box name should match the regular expression #{String(re)}"}, 404
   new User({apikey: req.body.apikey}).save (err) ->
+    timelog "created database entity: user #{req.params.org}/#{req.params.project}"
     User.findOne {apikey: req.body.apikey}, (err, user) ->
+      timelog "found user (again) #{req.params.org}/#{req.params.project}"
       return res.send {error: "User not found" }, 404 unless user?
       Box.findOne {name: box_name}, (err, box) ->
+        timelog "checked box existence #{req.params.org}/#{req.params.project}"
         if box
           return res.send {error: "Box already exists"}
         else
           new Box({user: user._id, name: box_name}).save (err) ->
+            timelog "created database entity: box #{req.params.org}/#{req.params.project}"
             if err
               console.log "Creating box: #{err} "
               return res.send {error: "Unknown error"}
             else
               exports.unix_user_add user_name, (err, stdout, stderr) ->
+                timelog "added unix user #{req.params.org}/#{req.params.project}"
                 any_stderr = stderr is not ''
                 console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
                 return res.send {error: "Unable to create box"} if err? or any_stderr
