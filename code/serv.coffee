@@ -129,7 +129,6 @@ app.post "/:org/:project/exec/?", check_api_key
 app.post "/:org/:project/exec/?", (req, res) ->
   timelog "got POST exec #{req.params.org}/#{req.param.project} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
-  res.setHeader 'Trailer': 'X-Exit-Status'
   user_name = req.params.org + '.' + req.params.project
   cmd = req.body.cmd
   su = child_process.spawn "su", ["-c", "#{cmd}", "#{user_name}"]
@@ -138,7 +137,6 @@ app.post "/:org/:project/exec/?", (req, res) ->
   su.stderr.on 'data', (data) ->
     res.write data
   su.on 'exit', (code) ->
-    res.addTrailer 'X-Exit-Status', "#{code}"
     res.end()
 
   req.on 'end', -> su.kill()
