@@ -62,6 +62,11 @@ To run cobalt locally:
     . ./activate
     coffee code/serv.coffee
 
+You can start and stop Cobalt on an Ubuntu server using upstart:
+
+    start cobalt
+    stop cobalt
+
 ### Running Cobalt Tests ###
 To run the unit tests (note that cobalt must be running):
 
