@@ -1,4 +1,4 @@
-# basic.coffee
+# ssh_keys.coffee
 
 child_process = require 'child_process'
 fs     = require 'fs'
