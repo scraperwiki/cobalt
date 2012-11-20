@@ -127,7 +127,7 @@ app.get "/:org/:project/files/*", (req, res) ->
 # Exec endpoint - see wiki for note about security
 app.post "/:org/:project/exec/?", check_api_key
 app.post "/:org/:project/exec/?", (req, res) ->
-  timelog "got POST exec #{req.params.org}/#{req.param.project} #{req.body.cmd}"
+  timelog "got POST exec #{req.params.org}/#{req.params.project} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
   user_name = req.params.org + '.' + req.params.project
   cmd = req.body.cmd
