@@ -1,6 +1,6 @@
 # cobalt.coffee
 
-exec = (require 'child_process').exec
+{exec} = require 'child_process'
 fs = require 'fs'
 # https://github.com/mikeal/request
 request = require 'request'
@@ -11,7 +11,10 @@ host = process.env.COBALT_INTEGRATION_TEST_SERVER or 'boxecutor-int-test-0.scrap
 baseurl = "http://#{host}"
 
 cobalt_api_key = process.env.COTEST_USER_API_KEY
+staff_api_key = process.env.COTEST_STAFF_API_KEY
 boxname = 'cotest/' + String(Math.random()).replace(/\./,'')
+fresh_username = ->
+  'nu' + String(Math.random()).replace(/\./,'')
 ssh_boxname = boxname.replace('/', '.')
 sshkey_pub_path =  "../swops-secret/cotest-rsa.pub"
 sshkey_prv_path =  "../swops-secret/cotest-rsa"
@@ -48,9 +51,56 @@ scp_cmd = (file_path, file_name, callback) ->
 
 describe 'Integration testing', ->
   describe 'When I use the http API', ->
+    newuser = null
+    newapikey = null
     it 'GET / works', (done) ->
       request.get "#{baseurl}/", (err, resp, body) ->
         resp.should.have.status 200
+        done()
+
+    it 'ScraperWiki staff can create a user', (done) ->
+      should.exist staff_api_key
+      options =
+        uri: "http://#{host}/#{fresh_username()}"
+        form:
+          apikey: staff_api_key
+      request.post options, (err, resp, body) ->
+        should.not.exist err
+        resp.should.have.status 201
+        json = JSON.parse body
+        newuser = json.shortname
+        newapikey = json.apikey
+        done()
+
+    it 'New user can create a box', (done) ->
+      options =
+        uri: "http://#{host}/#{newuser}/myfirstbox"
+        form:
+          apikey: newapikey
+      request.post options, (err, resp, body) ->
+        should.not.exist err
+        resp.should.have.status 200
+        done()
+
+    it 'I cannot create a user', (done) ->
+      should.exist cobalt_api_key
+      options =
+        uri: "http://#{host}/#{fresh_username()}"
+        form:
+          apikey: cobalt_api_key
+      request.post options, (err, resp, body) ->
+        should.not.exist err
+        resp.should.have.status 403
+        done()
+
+    it 'Nobodies cannot create a user', (done) ->
+      options =
+        uri: "http://#{host}/#{fresh_username()}"
+        form:
+          apikey: '' + Math.random()
+      request.post options, (err, resp, body) ->
+        should.not.exist err
+        resp.should.have.status 403
         done()
 
     it 'I can create a box', (done) ->

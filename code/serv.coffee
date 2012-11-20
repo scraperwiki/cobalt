@@ -60,27 +60,39 @@ box_settings = (user_name, callback) ->
     callback null, settings if not err?
     callback err, {} if err?
 
-check_auth = (apikey, org, callback) ->
+check_auth = (apikey, profile, callback) ->
   url = "https://scraperwiki.com/froth/check_key/#{apikey}"
   request.get url, (err, resp, body) ->
     body = JSON.parse body
-    if resp.statusCode is 200 and org is body.org
+    # What we call profile here, is called org in the froth result.
+    if resp.statusCode is 200 and profile is body.org
       callback true
     else
       callback false
+
+fresh_apikey = ->
+  [Math.random(), Math.random()].join('-')
 
 # TODO: should this be middleware?
 # Check if scraperwiki currently recognises the api key
 # If fails, check if that apikey has been valid in the past for box creation
 check_api_key = (req, res, next) ->
+  if not req.params.profile?
+    req.params.profile = req.params[0]
   res.header('Content-Type', 'application/json')
   apikey = req.body.apikey or req.query.apikey
   if apikey?
-    check_auth apikey, req.params.org, (authorised) ->
-      if authorised
+    User.findOne {apikey: apikey, shortname: req.params.profile}, (err, user) ->
+      console.log 'check_api_key', err, user
+      if user
         return next()
       else
-        return res.send {error: "Unauthorised"}, 403
+        # :todo: this is the froth check, we should remove at some point.
+        check_auth apikey, req.params.profile, (authorised) ->
+          if authorised
+            return next()
+          else
+            return res.send {error: "Unauthorised"}, 403
   else
     return res.send {error: "No API key supplied"}, 403
 
@@ -92,11 +104,11 @@ app.get "/", (req, res) ->
   res.render('index', {rooturl: root_url})
 
 # Documentation for SSHing to a box.
-app.get "/:org/:project/?", (req, res) ->
-  user_name = req.params.org + '.' + req.params.project
-  box_name = req.params.org + '/' + req.params.project
+app.get "/:profile/:project/?", (req, res) ->
+  user_name = req.params.profile + '.' + req.params.project
+  box_name = req.params.profile + '/' + req.params.project
   res.header('Content-Type', 'application/json')
-  check_auth req.query.apikey, req.params.org, (authorised) ->
+  check_auth req.query.apikey, req.params.profile, (authorised) ->
     Box.findOne {name: box_name}, (err, box) ->
       return res.send { error: "Box not found" }, 404 unless box?
       box_settings box_name, (err, settings) ->
@@ -108,11 +120,11 @@ app.get "/:org/:project/?", (req, res) ->
           publish_token: if authorised and settings.publish_token then settings.publish_token else undefined
 
 # Get file
-app.get "/:org/:project/files/*", check_api_key
-app.get "/:org/:project/files/*", (req, res) ->
+app.get "/:profile/:project/files/*", check_api_key
+app.get "/:profile/:project/files/*", (req, res) ->
   res.removeHeader('Content-Type')
-  user_name = req.params.org + '.' + req.params.project
-  box_name = req.params.org + '/' + req.params.project
+  user_name = req.params.profile + '.' + req.params.project
+  box_name = req.params.profile + '/' + req.params.project
   path = req.path.replace "/#{box_name}/files", ''
   path = path.replace /\'/g, ''
   user_name = user_name.replace /\'/g, ''
@@ -125,11 +137,11 @@ app.get "/:org/:project/files/*", (req, res) ->
       res.end()
 
 # Exec endpoint - see wiki for note about security
-app.post "/:org/:project/exec/?", check_api_key
-app.post "/:org/:project/exec/?", (req, res) ->
-  timelog "got POST exec #{req.params.org}/#{req.params.project} #{req.body.cmd}"
+app.post "/:profile/:project/exec/?", check_api_key
+app.post "/:profile/:project/exec/?", (req, res) ->
+  timelog "got POST exec #{req.params.profile}/#{req.params.project} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
-  user_name = req.params.org + '.' + req.params.project
+  user_name = req.params.profile + '.' + req.params.project
   cmd = req.body.cmd
   su = child_process.spawn "su", ["-c", "#{cmd}", "#{user_name}"]
   su.stdout.on 'data', (data) ->
@@ -146,49 +158,68 @@ app.post "/:org/:project/exec/?", (req, res) ->
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
 
-# Check API key for all org/project URLs
-app.post "/:org*", check_api_key
+# Check API key for all profile/project URLs, except for /:profile,
+# which is used by the profile endpoint (below).
+app.post /^[/]([^/]+)[/].+/, check_api_key
 
 timelog = (stuff) ->
   console.log (new Date()).toISOString(), stuff
 
+# Create a new profile - staff only
+app.post "/:profile/?", (req, res) ->
+  timelog "got request create profile #{req.params.profile}"
+  # :todo: POST to existing profile should be an edit, and we should check
+  # the profile's apikey.
+  # What we actually do is only allow creation, using a staff apikey.
+  User.findOne {apikey: req.body.apikey}, (err, user) ->
+    if not user?.isstaff
+      return res.send { error: "Unauthorised" }, 403
+    else
+      # :todo: Extract more profile details from query params here.
+      new User({shortname: req.params.profile, apikey: fresh_apikey()}).save (err) ->
+        User.findOne {shortname: req.params.profile}, (err, user) ->
+          # 201 Created, RFC2616
+          return res.send { shortname: user.shortname, apikey: user.apikey }, 201
+
 # Create a box
-app.post "/:org/:project/?", (req, res) ->
-  timelog "got request create box #{req.params.org}/#{req.params.project}"
+app.post "/:profile/:project/?", (req, res) ->
+  timelog "got request create box #{req.params.profile}/#{req.params.project}"
   res.header('Content-Type', 'application/json')
-  user_name = req.params.org + '.' + req.params.project
-  box_name = req.params.org + '/' + req.params.project
+  user_name = req.params.profile + '.' + req.params.project
+  box_name = req.params.profile + '/' + req.params.project
   re = /^[a-zA-Z0-9_+-]+\/[a-zA-Z0-9_+-]+$/
   if not re.test box_name
     return res.send {error:
       "Box name should match the regular expression #{String(re)}"}, 404
-  new User({apikey: req.body.apikey}).save (err) ->
-    timelog "created database entity: user #{req.params.org}/#{req.params.project}"
+  # :todo: eventually users using apikeys from ScraperWiki classic won't be allowed,
+  # in which case we won't need to create a User object here.
+  new User({apikey: req.body.apikey, shortname: req.params.profile}).save (err) ->
+    timelog "created database entity: user #{req.params.profile}/#{req.params.project}"
     User.findOne {apikey: req.body.apikey}, (err, user) ->
-      timelog "found user (again) #{req.params.org}/#{req.params.project}"
+      timelog "found user (again) #{req.params.profile}/#{req.params.project}"
       return res.send {error: "User not found" }, 404 unless user?
       Box.findOne {name: box_name}, (err, box) ->
-        timelog "checked box existence #{req.params.org}/#{req.params.project}"
+        timelog "checked box existence #{req.params.profile}/#{req.params.project}"
         if box
           return res.send {error: "Box already exists"}
         else
           new Box({user: user._id, name: box_name}).save (err) ->
-            timelog "created database entity: box #{req.params.org}/#{req.params.project}"
+            timelog "created database entity: box #{req.params.profile}/#{req.params.project}"
             if err
               console.log "Creating box: #{err} "
               return res.send {error: "Unknown error"}
             else
               exports.unix_user_add user_name, (err, stdout, stderr) ->
-                timelog "added unix user #{req.params.org}/#{req.params.project}"
+                timelog "added unix user #{req.params.profile}/#{req.params.project}"
                 any_stderr = stderr is not ''
                 console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
                 return res.send {error: "Unable to create box"} if err? or any_stderr
                 return res.send {status: "ok"}
 
 # Add an SSH key to a box
-app.post "/:org/:project/sshkeys/?", (req, res) ->
-  user_name = req.params.org + '.' + req.params.project
-  box_name = req.params.org + '/' + req.params.project
+app.post "/:profile/:project/sshkeys/?", (req, res) ->
+  user_name = req.params.profile + '.' + req.params.project
+  box_name = req.params.profile + '/' + req.params.project
 
   res.header('Content-Type', 'application/json')
   unless req.body.sshkey? then return res.send { error: "SSH Key not specified" }, 400
