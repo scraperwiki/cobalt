@@ -6,7 +6,7 @@ userSchema = new Schema
   shortname: {type: String, unique: true}
   email: [String]
   displayname: String
-  password: String
+  password: String # encrypted, duh!
   isstaff: Boolean
 
 module.exports = mongoose.model 'User', userSchema
