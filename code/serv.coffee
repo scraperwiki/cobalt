@@ -17,6 +17,7 @@ mongoose = require 'mongoose'
 
 User = require 'models/user'
 Box = require 'models/box'
+Token = require 'models/token'
 SSHKey = require 'models/ssh_key'
 
 app = express()
@@ -154,18 +155,30 @@ app.post "/:profile/:project/exec/?", (req, res) ->
   req.on 'end', -> su.kill()
   req.on 'close', -> su.kill()
 
-
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
 
-# Check API key for all profile/project URLs, except for /:profile,
-# which is used by the profile endpoint (below).
-app.post /^[/]([^/]+)[/].+/, check_api_key
-
-timelog = (stuff) ->
+timelog = (stuff...) ->
   console.log (new Date()).toISOString(), stuff
 
+# Deal with a token
+app.post "/token/:token/?", (req, res) ->
+  Token.findOne {token: req.params.token}, (err, token) ->
+    if token.shortname? and req.body.password?
+      # :todo: has token expired?
+      User.findOne {shortname: token.shortname}, (err, user) ->
+        if user
+          # :todo: token should expire
+          user.setPassword req.body.password, ->
+            return res.send { shortname: user.shortname, apikey: user.apikey }, 200
+        else
+          timelog "no User with shortname #{token.shortname} for Token #{token.token}"
+          return res.send 404
+    else
+      return res.send 404
+
 # Create a new profile - staff only
+# Don't want to check_api_key because this includes its own staff check
 app.post "/:profile/?", (req, res) ->
   timelog "got request create profile #{req.params.profile}"
   # :todo: POST to existing profile should be an edit, and we should check
@@ -178,11 +191,13 @@ app.post "/:profile/?", (req, res) ->
       # :todo: Extract more profile details from query params here.
       new User({shortname: req.params.profile, apikey: fresh_apikey()}).save (err) ->
         User.findOne {shortname: req.params.profile}, (err, user) ->
-          # 201 Created, RFC2616
-          return res.send { shortname: user.shortname, apikey: user.apikey }, 201
+          token = String(Math.random()).replace('0.', '')
+          new Token({token: token, shortname: user.shortname}).save (err) ->
+            # 201 Created, RFC2616
+            return res.send { shortname: user.shortname, apikey: user.apikey, token: token }, 201
 
 # Create a box
-app.post "/:profile/:project/?", (req, res) ->
+app.post "/:profile/:project/?", check_api_key, (req, res) ->
   timelog "got request create box #{req.params.profile}/#{req.params.project}"
   res.header('Content-Type', 'application/json')
   user_name = req.params.profile + '.' + req.params.project
@@ -217,7 +232,7 @@ app.post "/:profile/:project/?", (req, res) ->
                 return res.send {status: "ok"}
 
 # Add an SSH key to a box
-app.post "/:profile/:project/sshkeys/?", (req, res) ->
+app.post "/:profile/:project/sshkeys/?", check_api_key, (req, res) ->
   user_name = req.params.profile + '.' + req.params.project
   box_name = req.params.profile + '/' + req.params.project
 

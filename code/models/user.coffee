@@ -9,4 +9,11 @@ userSchema = new Schema
   password: String # encrypted, duh!
   isstaff: Boolean
 
+hash = (password) ->
+  'hash-me-' + password
+
+userSchema.methods.setPassword = (password, callback) ->
+  @.password = hash password
+  @.save callback
+
 module.exports = mongoose.model 'User', userSchema

@@ -53,6 +53,7 @@ describe 'Integration testing', ->
   describe 'When I use the http API', ->
     newuser = null
     newapikey = null
+    newtoken = null
     it 'GET / works', (done) ->
       request.get "#{baseurl}/", (err, resp, body) ->
         resp.should.have.status 200
@@ -60,26 +61,44 @@ describe 'Integration testing', ->
 
     it 'ScraperWiki staff can create a user', (done) ->
       should.exist staff_api_key
+      newuser = fresh_username()
       options =
-        uri: "http://#{host}/#{fresh_username()}"
+        uri: "http://#{host}/#{newuser}"
         form:
           apikey: staff_api_key
       request.post options, (err, resp, body) ->
         should.not.exist err
-        resp.should.have.status 201
+        String(resp.statusCode)[0].should.equal '2'
         json = JSON.parse body
-        newuser = json.shortname
+        newuser.should.equal json.shortname
+        should.exist json.apikey
+        should.exist json.token
         newapikey = json.apikey
+        newtoken = json.token
         done()
 
-    it 'New user can create a box', (done) ->
+    it 'The new user can choose a password', (done) ->
+      should.exist newuser
+      should.exist newtoken
+      options =
+        uri: "http://#{host}/token/#{newtoken}"
+        form:
+          password: 'mynewpassword'
+      request.post options, (err, resp, body) ->
+        should.not.exist err
+        String(resp.statusCode)[0].should.equal '2'
+        json = JSON.parse body
+        should.exist json.shortname
+        done()
+
+    it 'The new user can create a box', (done) ->
       options =
         uri: "http://#{host}/#{newuser}/myfirstbox"
         form:
           apikey: newapikey
       request.post options, (err, resp, body) ->
         should.not.exist err
-        resp.should.have.status 200
+        String(resp.statusCode)[0].should.equal '2'
         done()
 
     it 'I cannot create a user', (done) ->
@@ -111,7 +130,7 @@ describe 'Integration testing', ->
           apikey: cobalt_api_key
       request.post options, (err, resp, body) ->
         should.not.exist err
-        resp.should.have.status 200
+        String(resp.statusCode)[0].should.equal '2'
         done()
 
     it 'I can add an ssh key', (done) ->
@@ -122,12 +141,12 @@ describe 'Integration testing', ->
           sshkey: fs.readFileSync sshkey_pub_path, "ascii"
       request.post options, (err, resp, body) ->
         should.not.exist err
-        resp.should.have.status 200
+        String(resp.statusCode)[0].should.equal '2'
         done()
 
     it 'the CORS headers are present', (done) ->
       request.get "#{baseurl}/", (err, resp, body) ->
-        resp.should.have.status 200
+        String(resp.statusCode)[0].should.equal '2'
         resp.headers["access-control-allow-origin"].should.equal '*'
         done()
 
