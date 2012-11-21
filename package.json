@@ -9,7 +9,8 @@
     "request": ">0",
     "ejs": ">0",
     "underscore": ">0",
-    "async": "~0.1.22"
+    "async": "~0.1.22",
+    "bcrypt": "~0.7.3"
   },
   "devDependencies": {
     "mocha": ">=0.4.1",
