@@ -1,5 +1,9 @@
 #!/usr/bin/env coffee
 # Created 2012-11-20
+# Adds a shortname to the User documents in a mongo database.
+# The database is specified on the command line.
+# The shortname is dervied from the apikey using froth,
+# except for the special cases which are hardcoded here.
 
 async = require 'async'
 mongoose = require 'mongoose'
@@ -53,7 +57,7 @@ main = ->
           cb null, user
       if not shortname?
         shortname = special[user.apikey]
-      console.log user.apikey, "xx #{shortname} yy"
+      console.log user.apikey, shortname
       user.shortname = shortname
       user.save ->
         cb null, user
