@@ -17,7 +17,12 @@ hash = (password, callback) ->
 
 userSchema.methods.setPassword = (password, callback) ->
   hash password, (hashed) =>
-    @.password = hashed
-    @.save callback
+    @password = hashed
+    @save callback
+
+userSchema.methods.objectify = ->
+  # :todo: In future we might want to remove some stuff
+  # from this object, like the password hash
+  @toObject()
 
 module.exports = mongoose.model 'User', userSchema

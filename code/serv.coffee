@@ -104,6 +104,10 @@ app.get "/", (req, res) ->
   res.header('Content-Type', 'application/json')
   res.render('index', {rooturl: root_url})
 
+app.get "/:profile/?", check_api_key, (req, res) ->
+  User.findOne {shortname: req.params.profile}, (err, profile) ->
+    res.json profile.objectify()
+
 # Documentation for SSHing to a box.
 app.get "/:profile/:project/?", (req, res) ->
   user_name = req.params.profile + '.' + req.params.project
@@ -170,7 +174,7 @@ app.post "/token/:token/?", (req, res) ->
         if user
           # :todo: token should expire
           user.setPassword req.body.password, ->
-            return res.send { shortname: user.shortname, apikey: user.apikey }, 200
+            return res.json user.objectify()
         else
           timelog "no User with shortname #{token.shortname} for Token #{token.token}"
           return res.send 404
@@ -189,12 +193,20 @@ app.post "/:profile/?", (req, res) ->
       return res.send { error: "Unauthorised" }, 403
     else
       # :todo: Extract more profile details from query params here.
-      new User({shortname: req.params.profile, apikey: fresh_apikey()}).save (err) ->
+      new User(
+        shortname: req.params.profile
+        displayname: req.body.displayname
+        email: [req.body.email]
+        apikey: fresh_apikey()
+      ).save (err) ->
+        console.log err
         User.findOne {shortname: req.params.profile}, (err, user) ->
           token = String(Math.random()).replace('0.', '')
           new Token({token: token, shortname: user.shortname}).save (err) ->
             # 201 Created, RFC2616
-            return res.send { shortname: user.shortname, apikey: user.apikey, token: token }, 201
+            userobj = user.objectify()
+            userobj.token = token
+            return res.json userobj, 201
 
 # Create a box
 app.post "/:profile/:project/?", check_api_key, (req, res) ->

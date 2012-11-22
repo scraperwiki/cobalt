@@ -66,9 +66,11 @@ describe 'Integration testing', ->
         uri: "http://#{host}/#{newuser}"
         form:
           apikey: staff_api_key
+          displayname: "T. #{newuser} Testerson"
+          email: "#{newuser}@example.com"
       request.post options, (err, resp, body) ->
         should.not.exist err
-        String(resp.statusCode)[0].should.equal '2'
+        resp.statusCode.should.match /^2/
         json = JSON.parse body
         newuser.should.equal json.shortname
         should.exist json.apikey
@@ -86,9 +88,26 @@ describe 'Integration testing', ->
           password: 'mynewpassword'
       request.post options, (err, resp, body) ->
         should.not.exist err
-        String(resp.statusCode)[0].should.equal '2'
+        resp.statusCode.should.match /^2/
         json = JSON.parse body
         should.exist json.shortname
+        done()
+
+    it 'The new user can see their details', (done) ->
+      should.exist newuser
+      should.exist newapikey
+      options =
+        uri: "http://#{host}/#{newuser}/"
+        qs:
+          apikey: newapikey
+      request.get options, (err, resp, body) ->
+        should.not.exist err
+        resp.statusCode.should.match /^2/
+        json = JSON.parse body
+        newuser.should.equal json.shortname
+        newapikey.should.equal json.apikey
+        "T. #{newuser} Testerson".should.equal json.displayname
+        "#{newuser}@example.com".should.equal json.email[0]
         done()
 
     it 'The new user can create a box', (done) ->
@@ -98,7 +117,7 @@ describe 'Integration testing', ->
           apikey: newapikey
       request.post options, (err, resp, body) ->
         should.not.exist err
-        String(resp.statusCode)[0].should.equal '2'
+        resp.statusCode.should.match /^2/
         done()
 
     it 'I cannot create a user', (done) ->
@@ -130,7 +149,7 @@ describe 'Integration testing', ->
           apikey: cobalt_api_key
       request.post options, (err, resp, body) ->
         should.not.exist err
-        String(resp.statusCode)[0].should.equal '2'
+        resp.statusCode.should.match /^2/
         done()
 
     it 'I can add an ssh key', (done) ->
@@ -141,12 +160,12 @@ describe 'Integration testing', ->
           sshkey: fs.readFileSync sshkey_pub_path, "ascii"
       request.post options, (err, resp, body) ->
         should.not.exist err
-        String(resp.statusCode)[0].should.equal '2'
+        resp.statusCode.should.match /^2/
         done()
 
     it 'the CORS headers are present', (done) ->
       request.get "#{baseurl}/", (err, resp, body) ->
-        String(resp.statusCode)[0].should.equal '2'
+        resp.statusCode.should.match /^2/
         resp.headers["access-control-allow-origin"].should.equal '*'
         done()
 
