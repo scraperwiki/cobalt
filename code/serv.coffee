@@ -61,41 +61,31 @@ box_settings = (user_name, callback) ->
     callback null, settings if not err?
     callback err, {} if err?
 
+# Consult mongo database for specified profile.
 check_auth = (apikey, profile, callback) ->
-  url = "https://scraperwiki.com/froth/check_key/#{apikey}"
-  request.get url, (err, resp, body) ->
-    body = JSON.parse body
-    # What we call profile here, is called org in the froth result.
-    if resp.statusCode is 200 and profile is body.org
+  User.findOne {apikey: apikey, shortname: profile}, (err, user) ->
+    if user
       callback true
     else
       callback false
 
-fresh_apikey = ->
-  [Math.random(), Math.random()].join('-')
-
-# TODO: should this be middleware?
-# Check if scraperwiki currently recognises the api key
-# If fails, check if that apikey has been valid in the past for box creation
+# Middleware that checks apikey and issues HTTP status as appropriate.
 check_api_key = (req, res, next) ->
   if not req.params.profile?
     req.params.profile = req.params[0]
   res.header('Content-Type', 'application/json')
   apikey = req.body.apikey or req.query.apikey
   if apikey?
-    User.findOne {apikey: apikey, shortname: req.params.profile}, (err, user) ->
-      console.log 'check_api_key', err, user
-      if user
+    check_auth apikey, req.params.profile, (authorised) ->
+      if authorised
         return next()
       else
-        # :todo: this is the froth check, we should remove at some point.
-        check_auth apikey, req.params.profile, (authorised) ->
-          if authorised
-            return next()
-          else
-            return res.send {error: "Unauthorised"}, 403
+        return res.send {error: "Unauthorised"}, 403
   else
     return res.send {error: "No API key supplied"}, 403
+
+fresh_apikey = ->
+  [Math.random(), Math.random()].join('-')
 
 # GET REQUESTS
 # These should all be idempotent, i.e. make no changes to the server.
