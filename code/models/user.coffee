@@ -21,8 +21,9 @@ userSchema.methods.setPassword = (password, callback) ->
     @save callback
 
 userSchema.methods.objectify = ->
-  # :todo: In future we might want to remove some stuff
-  # from this object, like the password hash
-  @toObject()
+  result = @toObject()
+  delete result._id
+  delete result.password
+  return result
 
 module.exports = mongoose.model 'User', userSchema
