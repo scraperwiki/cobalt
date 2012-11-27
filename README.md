@@ -74,14 +74,27 @@ To run the unit tests (note that cobalt must be running):
     . ./activate
     mocha
 
-To get the integration server to pull the most recent changes:
+Integration Tests.
+
+You usually need to give the integration server the most recent code.
+the 029 hook will pull it from your local disk:
+
+    li runhook li runhook boxecutor-int-test-0 boxecutor-thin 029_copy_cobalt_from_local.l.sh
+    # And restart cobalt
+    li sh boxecutor-int-test-0 "service cobalt restart"
+
+Or if you like you can pull from github, but this is less good, because
+you must have pushed to github first:
 
     li sh boxecutor-int-test-0 "cd /opt/cobalt && git pull && service cobalt restart"
 
-and to run the integration tests:
-    
+In any case to run the integration tests:
+
     mocha integration_test
 
-integration_test/cobalt.coffee has the host name that the integration tests
-are run on hardwired into it. Its key is in swops-secret.
+The host that is used for the integration test defaults to something
+hardwired in the source cod (integration_test/cobalt.coffee),
+but can be overridden with an environment variable:
+
+    COBALT_INTEGRATION_TEST_SERVER=boxecutor-dev-1.scraperwiki.net mocha integration_test/
 
