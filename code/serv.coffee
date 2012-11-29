@@ -181,7 +181,7 @@ app.post "/:profile/?", (req, res) ->
   # What we actually do is only allow creation, using a staff apikey.
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     if not user?.isstaff
-      return res.send { error: "Unauthorised" }, 403
+      return res.send { error: "Not authorised to create new profile" }, 403
     else
       # :todo: Extract more profile details from query params here.
       new User(
@@ -245,8 +245,8 @@ app.post "/:profile/:project/sshkeys/?", check_api_key, (req, res) ->
   Box.findOne {name: box_name}, (err, box) ->
     return res.send { error: "Box not found" }, 404 unless box?
     User.findOne {apikey: req.body.apikey}, (err, user) ->
-      return res.send { error: "Unauthorised" }, 403 unless user?
-      return res.send { error: "Unauthorised" }, 403 unless user._id.toString() == box.user.toString()
+      return res.send { error: "No user is authorised for that apikey" }, 403 unless user?
+      return res.send { error: "That user is not authorised to use that apikey" }, 403 unless user._id.toString() == box.user.toString()
       try
         name = SSHKey.extract_name req.body.sshkey
       catch TypeError
