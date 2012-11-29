@@ -49,7 +49,8 @@ describe 'Box documentation', ->
       User.collection.drop ->
         Box.collection.drop ->
 
-        new User({apikey: APIKEY}).save ->
+        shortname = BOX.split('/')[0]
+        new User({apikey: APIKEY, shortname: shortname}).save ->
           User.findOne {apikey: APIKEY}, (err, user) ->
             console.log err if err
             new Box({user: user._id, name: BOX}).save ->
@@ -104,7 +105,6 @@ describe 'Box documentation', ->
             qs:
               apikey: APIKEY
 
-          nocks.success APIKEY
           request.get params, (err, resp, body) ->
             resp.statusCode.should.equal 200
             resp.body.should.include "/1234567890qwerty/http"

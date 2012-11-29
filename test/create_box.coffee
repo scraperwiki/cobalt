@@ -18,6 +18,8 @@ httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000/'
 
 describe 'Creating a box:', ->
+  apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
+
   after ->
     nock.cleanAll()
 
@@ -31,7 +33,8 @@ describe 'Creating a box:', ->
         callback null, null, null
 
       User.collection.drop ->
-        Box.collection.drop done
+        Box.collection.drop ->
+          new User({apikey: apikey, shortname: 'kiteorg'}).save done
 
     it 'gives an error when creating a databox without a key', (done) ->
       u = baseurl + 'kiteorg/newdatabox'
@@ -41,13 +44,9 @@ describe 'Creating a box:', ->
         done()
 
     describe 'when the apikey is valid', ->
-      froth = null
       response = null
-      apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
       before (done) ->
-        froth = nocks.success apikey
-
         options =
           uri: baseurl + 'kiteorg/newdatabox'
           form:
@@ -57,9 +56,6 @@ describe 'Creating a box:', ->
             response = resp
             done()
 
-      it 'requests validation from froth', ->
-        froth.isDone().should.be.true
-
       it "doesn't return an error", ->
         (_.isEqual (JSON.parse response.body), {status:"ok"}).should.be.true
         response.statusCode.should.equal 200
@@ -68,19 +64,12 @@ describe 'Creating a box:', ->
         exec_stub.called.should.be.true
         exec_stub.calledWith 'kiteorg/newdatabox'
 
-      it 'adds the user to the database', (done) ->
-        User.findOne {apikey: apikey}, (err, user) ->
-          should.exist user
-          done()
-
       it 'adds the box to the database', (done) ->
         Box.findOne {name: 'kiteorg/newdatabox'}, (err, box) ->
           should.exist box
           done()
 
       it 'errors when the box already exists', (done) ->
-        froth = nocks.success apikey
-
         options =
           uri: baseurl + 'kiteorg/newdatabox'
           form:
@@ -96,8 +85,6 @@ describe 'Creating a box:', ->
       apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
       before (done) ->
-        nocks.success apikey
-
         options =
           uri: baseurl + 'kiteorg/box;with silly characters!'
           form:
@@ -115,8 +102,6 @@ describe 'Creating a box:', ->
       apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
       before (done) ->
-        froth = nocks.success apikey
-
         options =
           uri: baseurl + 'otherorg/box'
           form:
@@ -131,9 +116,6 @@ describe 'Creating a box:', ->
 
 
     describe 'when the apikey is invalid', ->
-      before ->
-        nocks.forbidden()
-
       it 'returns an error', (done) ->
         options =
           uri: baseurl + 'kiteorg/newdatabox'
