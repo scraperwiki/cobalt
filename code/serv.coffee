@@ -4,9 +4,10 @@
 # http server for cobalt.
 
 fs      = require 'fs'
-# Only used for existsSync, can be removed when update to node vsn
-# with existsSync in the fs module
 path    = require 'path'
+# Avoids warning.  Remove when we definitely use a node version with
+# the "modern" fs.existsSync.
+existsSync = fs.existsSync || path.existsSync
 child_process = require 'child_process'
 os      = require 'os'
 
@@ -272,7 +273,7 @@ app.post "/:profile/:project/sshkeys/?", check_api_key, (req, res) ->
             return res.send {"error": "Internal creation error"}
 
 app.listen port
-if path.existsSync(port) && fs.lstatSync(port).isSocket()
+if existsSync(port) && fs.lstatSync(port).isSocket()
   fs.chmodSync port, 0o600
   child_process.exec "chown www-data #{port}"
 
