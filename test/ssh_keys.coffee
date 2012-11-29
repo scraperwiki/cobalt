@@ -47,7 +47,7 @@ describe 'SSH keys:', ->
       # TODO: icky, we want fixtures or mocking
       User.collection.drop ->
         Box.collection.drop ->
-          new User({apikey: apikey}).save ->
+          new User({apikey: apikey, shortname: 'kiteorg'}).save ->
             User.findOne {apikey: apikey}, (err, user) ->
               new Box({user: user._id, name: 'kiteorg/newdatabox'}).save ->
                 SSHKey.collection.drop ->
@@ -64,7 +64,6 @@ describe 'SSH keys:', ->
       child_process.exec.restore()
 
     describe 'when the apikey is valid and box exists', ->
-      froth = null
       response = null
       exec_stub = null
       sshkey =
@@ -73,7 +72,6 @@ describe 'SSH keys:', ->
         """
 
       before (done) ->
-        froth = nocks.success apikey
 
         options =
           uri: URL
@@ -84,9 +82,6 @@ describe 'SSH keys:', ->
         request.post options, (err, resp, body) ->
             response = resp
             done()
-
-      it 'requests validation from froth', ->
-        froth.isDone().should.be.true
 
       it "doesn't return an error", ->
         response.statusCode.should.equal 200
@@ -105,8 +100,6 @@ describe 'SSH keys:', ->
           chmod_stub.calledOnce.should.be.true
 
     describe 'when the apikey is invalid', ->
-      before ->
-        froth = nocks.forbidden
 
       it 'returns an error', (done) ->
         options =
@@ -124,7 +117,6 @@ describe 'SSH keys:', ->
       before ->
         apikey2 = 'otheruserapikey'
         new User({apikey: apikey2}).save()
-        froth = nocks.success 'otheruserapikey'
 
       it 'returns an error', (done) ->
         options =
@@ -141,7 +133,6 @@ describe 'SSH keys:', ->
     describe "when the box doesn't exist", ->
       response = null
       before (done) ->
-        froth = nocks.success apikey
         options =
           uri: URL
           form:
@@ -163,7 +154,6 @@ describe 'SSH keys:', ->
       response = null
 
       before (done) ->
-        froth = nocks.success apikey
         options =
           uri: URL
           form:
@@ -177,8 +167,6 @@ describe 'SSH keys:', ->
         (_.isEqual (JSON.parse response.body), {"error":"SSH Key not specified"}).should.be.true
 
     describe "when sshkey isn't valid", ->
-      beforeEach ->
-        froth = nocks.success apikey
 
       # do we need this now?
       it 'returns an error if completely invalid', (done) ->
