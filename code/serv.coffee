@@ -99,6 +99,14 @@ app.get "/:profile/?", check_api_key, (req, res) ->
   User.findOne {shortname: req.params.profile}, (err, profile) ->
     res.json profile.objectify()
 
+app.get "/:profile/password/?", (req, res) ->
+  User.findOne {shortname: req.params.profile}, (err, profile) ->
+    if not profile?
+      return res.send 404
+    res.send 200,
+      password: profile.password
+      shortname: profile.shortname
+
 # Documentation for SSHing to a box.
 app.get "/:profile/:project/?", (req, res) ->
   user_name = req.params.profile + '.' + req.params.project
