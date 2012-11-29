@@ -29,6 +29,7 @@ describe 'Creating a box:', ->
 
     before (done) ->
       server = require 'serv'
+      sinon.stub console, 'tick'
       exec_stub = sinon.stub server, 'unix_user_add', (_a, callback) ->
         callback null, null, null
 

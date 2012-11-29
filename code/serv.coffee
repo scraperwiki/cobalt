@@ -135,7 +135,7 @@ app.get "/:profile/:project/files/*", (req, res) ->
 # Exec endpoint - see wiki for note about security
 app.post "/:profile/:project/exec/?", check_api_key
 app.post "/:profile/:project/exec/?", (req, res) ->
-  timelog "got POST exec #{req.params.profile}/#{req.params.project} #{req.body.cmd}"
+  console.tick "got POST exec #{req.params.profile}/#{req.params.project} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
   user_name = req.params.profile + '.' + req.params.project
   cmd = req.body.cmd
@@ -153,8 +153,9 @@ app.post "/:profile/:project/exec/?", (req, res) ->
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
 
-timelog = (stuff...) ->
-  console.log (new Date()).toISOString(), stuff
+console.tick = (stuff...) ->
+  # Prints out the time as well as stuff.
+  console.log.apply [(new Date()).toISOString()].concat(stuff)
 
 # Deal with a token
 app.post "/token/:token/?", (req, res) ->
@@ -167,7 +168,7 @@ app.post "/token/:token/?", (req, res) ->
           user.setPassword req.body.password, ->
             return res.json user.objectify()
         else
-          timelog "no User with shortname #{token.shortname} for Token #{token.token}"
+          console.tick "no User with shortname #{token.shortname} for Token #{token.token}"
           return res.send 404
     else
       return res.send 404
@@ -175,7 +176,7 @@ app.post "/token/:token/?", (req, res) ->
 # Create a new profile - staff only
 # Don't want to check_api_key because this includes its own staff check
 app.post "/:profile/?", (req, res) ->
-  timelog "got request create profile #{req.params.profile}"
+  console.tick "got request create profile #{req.params.profile}"
   # :todo: POST to existing profile should be an edit, and we should check
   # the profile's apikey.
   # What we actually do is only allow creation, using a staff apikey.
@@ -201,7 +202,7 @@ app.post "/:profile/?", (req, res) ->
 
 # Create a box
 app.post "/:profile/:project/?", check_api_key, (req, res) ->
-  timelog "got request create box #{req.params.profile}/#{req.params.project}"
+  console.tick "got request create box #{req.params.profile}/#{req.params.project}"
   res.header('Content-Type', 'application/json')
   user_name = req.params.profile + '.' + req.params.project
   box_name = req.params.profile + '/' + req.params.project
@@ -212,23 +213,23 @@ app.post "/:profile/:project/?", check_api_key, (req, res) ->
   # :todo: eventually users using apikeys from ScraperWiki classic won't be allowed,
   # in which case we won't need to create a User object here.
   new User({apikey: req.body.apikey, shortname: req.params.profile}).save (err) ->
-    timelog "created database entity: user #{req.params.profile}/#{req.params.project}"
+    console.tick "created database entity: user #{req.params.profile}/#{req.params.project}"
     User.findOne {apikey: req.body.apikey}, (err, user) ->
-      timelog "found user (again) #{req.params.profile}/#{req.params.project}"
+      console.tick "found user (again) #{req.params.profile}/#{req.params.project}"
       return res.send {error: "User not found" }, 404 unless user?
       Box.findOne {name: box_name}, (err, box) ->
-        timelog "checked box existence #{req.params.profile}/#{req.params.project}"
+        console.tick "checked box existence #{req.params.profile}/#{req.params.project}"
         if box
           return res.send {error: "Box already exists"}
         else
           new Box({user: user._id, name: box_name}).save (err) ->
-            timelog "created database entity: box #{req.params.profile}/#{req.params.project}"
+            console.tick "created database entity: box #{req.params.profile}/#{req.params.project}"
             if err
               console.log "Creating box: #{err} "
               return res.send {error: "Unknown error"}
             else
               exports.unix_user_add user_name, (err, stdout, stderr) ->
-                timelog "added unix user #{req.params.profile}/#{req.params.project}"
+                console.tick "added unix user #{req.params.profile}/#{req.params.project}"
                 any_stderr = stderr is not ''
                 console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
                 return res.send {error: "Unable to create box"} if err? or any_stderr
