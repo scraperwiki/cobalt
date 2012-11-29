@@ -85,8 +85,14 @@ check_api_key = (req, res, next) ->
   else
     return res.send {error: "No API key supplied"}, 403
 
+rand32 = ->
+  # 32 bits of lovely randomness.
+  # It so happens that Math.random() only generates 32 random
+  # bits on V8 (on node.js and Chrome).
+  Math.floor(Math.random() * Math.pow(2, 32))
+
 fresh_apikey = ->
-  [Math.random(), Math.random()].join('-')
+  [rand32(), rand32()].join('-')
 
 # GET REQUESTS
 # These should all be idempotent, i.e. make no changes to the server.
