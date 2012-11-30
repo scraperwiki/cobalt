@@ -68,7 +68,8 @@ You can start and stop Cobalt on an Ubuntu server using upstart:
     stop cobalt
 
 ### Running Cobalt Tests ###
-To run the unit tests (note that cobalt must be running):
+To run the unit tests (this starts a cobalt server on your local
+machine):
 
     cd cobalt
     . ./activate
@@ -77,7 +78,7 @@ To run the unit tests (note that cobalt must be running):
 Integration Tests.
 
 You usually need to give the integration server the most recent code.
-the 029 hook will pull it from your local disk:
+The 029 hook will pull it from your local disk:
 
     li runhook li runhook boxecutor-int-test-0 boxecutor-thin 029_copy_cobalt_from_local.l.sh
     # And restart cobalt
