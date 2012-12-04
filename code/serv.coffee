@@ -140,23 +140,6 @@ app.get "/:profile/:project/files/*", (req, res) ->
   su.on 'exit', (code) ->
       res.end()
 
-# Exec endpoint - see wiki for note about security
-app.post "/:profile/:project/exec/?", check_api_key
-app.post "/:profile/:project/exec/?", (req, res) ->
-  console.tick "got POST exec #{req.params.profile}/#{req.params.project} #{req.body.cmd}"
-  res.removeHeader 'Content-Type'
-  user_name = req.params.profile + '.' + req.params.project
-  cmd = req.body.cmd
-  su = child_process.spawn "su", ["-c", "#{cmd}", "#{user_name}"]
-  su.stdout.on 'data', (data) ->
-    res.write data
-  su.stderr.on 'data', (data) ->
-    res.write data
-  su.on 'exit', (code) ->
-    res.end()
-
-  req.on 'end', -> su.kill()
-  req.on 'close', -> su.kill()
 
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
@@ -184,25 +167,47 @@ app.post "/token/:token/?", (req, res) ->
 # Authenticate with profile name and password
 app.post "/:profile/auth/?", (req, res) ->
   console.tick  "Trying to auth #{req.body.profile}"
-  User.findOne {shortname: req.params.profile}, (err, profile) ->
+  profile = req.params.profile
+  password = req.body.password
+
+  User.findOne {shortname: profile}, (err, user) ->
     console.tick  err if err?
-    if not profile?
+    if not user?
       res.send 403,
         error: 'Wrong profile name or password'
     else
-      bcrypt.compare req.body.password, profile.password, (err, correct) ->
+      return res.send 400, { error: 'Password needed' } unless password
+      bcrypt.compare password, user.password, (err, correct) ->
         if err?
           console.tick err
           return res.send 500, { error: "Internal error" }
         if correct
           res.send 200,
-            shortname: profile.shortname
-            displayname: profile.displayname
-            apikey: profile.apikey
+            shortname: user.shortname
+            displayname: user.displayname
+            apikey: user.apikey
         else
           res.send 403,
             error: 'Wrong profile name or password'
 
+
+# Exec endpoint - see wiki for note about security
+app.post "/:profile/:project/exec/?", check_api_key
+app.post "/:profile/:project/exec/?", (req, res) ->
+  console.tick "got POST exec #{req.params.profile}/#{req.params.project} #{req.body.cmd}"
+  res.removeHeader 'Content-Type'
+  user_name = req.params.profile + '.' + req.params.project
+  cmd = req.body.cmd
+  su = child_process.spawn "su", ["-c", "#{cmd}", "#{user_name}"]
+  su.stdout.on 'data', (data) ->
+    res.write data
+  su.stderr.on 'data', (data) ->
+    res.write data
+  su.on 'exit', (code) ->
+    res.end()
+
+  req.on 'end', -> su.kill()
+  req.on 'close', -> su.kill()
 
 # Create a new profile - staff only
 # Don't want to check_api_key because this includes its own staff check
