@@ -15,6 +15,7 @@ express = require 'express'
 request = require 'request'
 exec    = require('child_process').exec
 mongoose = require 'mongoose'
+bcrypt = require 'bcrypt'
 
 User = require 'models/user'
 Box = require 'models/box'
@@ -105,13 +106,6 @@ app.get "/:profile/?", check_api_key, (req, res) ->
   User.findOne {shortname: req.params.profile}, (err, profile) ->
     res.json profile.objectify()
 
-app.get "/:profile/password/?", (req, res) ->
-  User.findOne {shortname: req.params.profile}, (err, profile) ->
-    if not profile?
-      return res.send 404
-    res.send 200,
-      password: profile.password
-      shortname: profile.shortname
 
 # Documentation for SSHing to a box.
 app.get "/:profile/:project/?", (req, res) ->
@@ -186,6 +180,29 @@ app.post "/token/:token/?", (req, res) ->
           return res.send 404
     else
       return res.send 404
+
+# Authenticate with profile name and password
+app.post "/:profile/auth/?", (req, res) ->
+  console.tick  "Trying to auth #{req.body.profile}"
+  User.findOne {shortname: req.params.profile}, (err, profile) ->
+    console.tick  err if err?
+    if not profile?
+      res.send 403,
+        error: 'Wrong profile name or password'
+    else
+      bcrypt.compare req.body.password, profile.password, (err, correct) ->
+        if err?
+          console.tick err
+          return res.send 500, { error: "Internal error" }
+        if correct
+          res.send 200,
+            shortname: profile.shortname
+            displayname: profile.displayname
+            apikey: profile.apikey
+        else
+          res.send 403,
+            error: 'Wrong profile name or password'
+
 
 # Create a new profile - staff only
 # Don't want to check_api_key because this includes its own staff check
