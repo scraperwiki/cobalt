@@ -185,6 +185,7 @@ app.post "/:profile/auth/?", (req, res) ->
           res.send 200,
             shortname: user.shortname
             displayname: user.displayname
+            email: user.email
             apikey: user.apikey
         else
           res.send 403,
