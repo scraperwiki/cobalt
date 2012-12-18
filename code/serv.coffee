@@ -199,7 +199,7 @@ app.post "/:profile/?", (req, res) ->
         shortname: req.params.profile
         displayname: req.body.displayname
         email: [req.body.email]
-        apikey: fresh_apikey()
+        apikey: req.body.newApikey or fresh_apikey()
       ).save (err) ->
         console.log err
         User.findOne {shortname: req.params.profile}, (err, user) ->
