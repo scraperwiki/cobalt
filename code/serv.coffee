@@ -164,33 +164,6 @@ app.post "/token/:token/?", (req, res) ->
     else
       return res.send 404
 
-# Authenticate with profile name and password
-app.post "/:profile/auth/?", (req, res) ->
-  console.tick  "Trying to auth #{req.body.profile}"
-  profile = req.params.profile
-  password = req.body.password
-
-  User.findOne {shortname: profile}, (err, user) ->
-    console.tick  err if err?
-    if not user?
-      res.send 403,
-        error: 'Wrong profile name or password'
-    else
-      return res.send 400, { error: 'Password needed' } unless password
-      bcrypt.compare password, user.password, (err, correct) ->
-        if err?
-          console.tick err
-          return res.send 500, { error: "Internal error" }
-        if correct
-          res.send 200,
-            shortname: user.shortname
-            displayname: user.displayname
-            email: user.email
-            apikey: user.apikey
-        else
-          res.send 403,
-            error: 'Wrong profile name or password'
-
 
 # Exec endpoint - see wiki for note about security
 app.post "/:profile/:project/exec/?", check_api_key
