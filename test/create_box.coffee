@@ -1,14 +1,15 @@
-# basic.coffee
+# create_box.coffee
 
 http = require 'http'
+
 # https://github.com/mikeal/request
 request = require 'request'
 should = require 'should'
 nock   = require 'nock'
 sinon  = require 'sinon'
 _ = require 'underscore'
-
 mongoose = require 'mongoose'
+
 User = require 'models/user'
 Box = require 'models/box'
 
