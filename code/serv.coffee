@@ -19,7 +19,6 @@ bcrypt = require 'bcrypt'
 
 User = require 'models/user'
 Box = require 'models/box'
-Token = require 'models/token'
 SSHKey = require 'models/ssh_key'
 
 app = express()
