@@ -145,7 +145,7 @@ app.get "/:profile/:project/files/*", (req, res) ->
 
 console.tick = (stuff...) ->
   # Prints out the time as well as stuff.
-  console.log.apply [(new Date()).toISOString()].concat(stuff)
+  console.log.apply console, [(new Date()).toISOString()].concat(stuff)
 
 # Exec endpoint - see wiki for note about security
 app.post "/:profile/:project/exec/?", check_api_key
