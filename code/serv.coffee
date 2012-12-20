@@ -1,8 +1,9 @@
 #!/usr/bin/env coffee
 
-# serv.ps
+# serv.coffee
 # http server for cobalt.
 
+{exec}  = require 'child_process'
 fs      = require 'fs'
 path    = require 'path'
 # Avoids warning.  Remove when we definitely use a node version with
@@ -11,15 +12,14 @@ existsSync = fs.existsSync || path.existsSync
 child_process = require 'child_process'
 os      = require 'os'
 
-express = require 'express'
-request = require 'request'
-exec    = require('child_process').exec
-mongoose = require 'mongoose'
 bcrypt = require 'bcrypt'
+express = require 'express'
+mongoose = require 'mongoose'
+request = require 'request'
 
-User = require 'models/user'
 Box = require 'models/box'
 SSHKey = require 'models/ssh_key'
+User = require 'models/user'
 
 app = express()
 
