@@ -148,23 +148,6 @@ console.tick = (stuff...) ->
   # Prints out the time as well as stuff.
   console.log.apply [(new Date()).toISOString()].concat(stuff)
 
-# Deal with a token
-app.post "/token/:token/?", (req, res) ->
-  Token.findOne {token: req.params.token}, (err, token) ->
-    if token.shortname? and req.body.password?
-      # :todo: has token expired?
-      User.findOne {shortname: token.shortname}, (err, user) ->
-        if user
-          # :todo: token should expire
-          user.setPassword req.body.password, ->
-            return res.json user.objectify()
-        else
-          console.tick "no User with shortname #{token.shortname} for Token #{token.token}"
-          return res.send 404
-    else
-      return res.send 404
-
-
 # Exec endpoint - see wiki for note about security
 app.post "/:profile/:project/exec/?", check_api_key
 app.post "/:profile/:project/exec/?", (req, res) ->

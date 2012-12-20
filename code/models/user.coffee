@@ -8,22 +8,12 @@ userSchema = new Schema
   created: {type: Date, default: Date.now}
 
   # XXX these fields can be removed next
-  password: String # encrypted, see setPassword method
   isstaff: Boolean
-
-hash = (password, callback) ->
-  bcrypt.hash password, 10, (err, hash) ->
-    callback hash
-
-userSchema.methods.setPassword = (password, callback) ->
-  hash password, (hashed) =>
-    @password = hashed
-    @save callback
 
 userSchema.methods.objectify = ->
   result = @toObject()
   delete result._id
-  delete result.password
+  delete result.password # XXX until migration script removes password from mongo database
   return result
 
 module.exports = mongoose.model 'User', userSchema

@@ -77,20 +77,6 @@ describe 'Integration testing', ->
         newtoken = json.token
         done()
 
-    it 'The new user can choose a password', (done) ->
-      should.exist newuser
-      should.exist newtoken
-      options =
-        uri: "http://#{host}/token/#{newtoken}"
-        form:
-          password: 'mynewpassword'
-      request.post options, (err, resp, body) ->
-        should.not.exist err
-        resp.statusCode.should.match /^2/
-        json = JSON.parse body
-        should.exist json.shortname
-        done()
-
     it 'The new user can see their details', (done) ->
       should.exist newuser
       should.exist newapikey
