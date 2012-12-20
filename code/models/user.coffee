@@ -8,7 +8,6 @@ userSchema = new Schema
   created: {type: Date, default: Date.now}
 
   # XXX these fields can be removed next
-  email: [String]
   password: String # encrypted, see setPassword method
   isstaff: Boolean
 
