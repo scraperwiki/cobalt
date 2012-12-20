@@ -197,7 +197,6 @@ app.post "/:profile/?", (req, res) ->
       # :todo: Extract more profile details from query params here.
       new User(
         shortname: req.params.profile
-        displayname: req.body.displayname
         email: [req.body.email]
         apikey: req.body.newApikey or fresh_apikey()
       ).save (err) ->

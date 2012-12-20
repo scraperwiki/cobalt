@@ -66,7 +66,6 @@ describe 'Integration testing', ->
         uri: "http://#{host}/#{newuser}"
         form:
           apikey: staff_api_key
-          displayname: "T. #{newuser} Testerson"
           email: "#{newuser}@example.com"
       request.post options, (err, resp, body) ->
         should.not.exist err
@@ -106,7 +105,6 @@ describe 'Integration testing', ->
         json = JSON.parse body
         newuser.should.equal json.shortname
         newapikey.should.equal json.apikey
-        "T. #{newuser} Testerson".should.equal json.displayname
         "#{newuser}@example.com".should.equal json.email[0]
         done()
 

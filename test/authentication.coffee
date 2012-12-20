@@ -12,7 +12,6 @@ describe 'Authentication', ->
     shortname = 'kiteorg'
     apikey = String(Math.random())
     password = String(Math.random())
-    displayname = 'Robot Hat'
     response = null
 
     before (done) ->
@@ -22,7 +21,6 @@ describe 'Authentication', ->
         fields =
                  shortname: shortname
                  apikey: apikey
-                 displayname: displayname
 
         new User(fields).save ->
           User.findOne {apikey: apikey}, (err, user) ->
@@ -49,8 +47,6 @@ describe 'Authentication', ->
         obj.apikey.length.should.be.above 1
         should.exist obj.shortname
         obj.shortname.length.should.be.above 1
-        should.exist obj.displayname
-        obj.displayname.length.should.be.above 1
 
       it 'should not contain a password field', ->
         obj = JSON.parse response.body

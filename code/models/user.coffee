@@ -5,11 +5,12 @@ Schema = mongoose.Schema
 userSchema = new Schema
   apikey: {type: String, unique: true}
   shortname: {type: String, unique: true}
+  created: {type: Date, default: Date.now}
+
+  # XXX these fields can be removed next
   email: [String]
-  displayname: String
   password: String # encrypted, see setPassword method
   isstaff: Boolean
-  created: {type: Date, default: Date.now}
 
 hash = (password, callback) ->
   bcrypt.hash password, 10, (err, hash) ->
