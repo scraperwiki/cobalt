@@ -7,7 +7,7 @@
     "Add your SSH public key with the web API.",
     "curl --data-urlencode sshkey@$(printf ~/.ssh/id_[rd]sa.pub) --data apikey=<apikey> <%= rooturl %>/<%= box_name %>/sshkeys",
     "Then connect (notice you should use a . instead of a /):",
-    "ssh <%= user_name %>@<%= server_hostname %>",
+    "ssh <%= box_name %>@<%= server_hostname %>",
     "",
     "b) git repository",
     "Each box has its own git repository in the /home/ directory.",

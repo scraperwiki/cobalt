@@ -22,34 +22,34 @@ SSHKey = require 'models/ssh_key'
 nocks = require '../test/nocks'
 
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
-BASE_URL = 'http://127.0.0.1:3000/'
+BASE_URL = 'http://127.0.0.1:3000'
 apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
 describe 'SSH keys:', ->
   after ->
     nock.cleanAll()
 
-  describe '( POST /<org>/<project>/sshkeys )', ->
+  describe '( POST /<boxname>/sshkeys )', ->
     server = null
     mongoose = null
     write_stub = null
     chmod_stub = null
-    URL = "#{BASE_URL}kiteorg/newdatabox/sshkeys"
+    URL = "#{BASE_URL}/newdatabox/sshkeys"
  
     before (done) ->
       server = require 'serv'
       mongoose = require 'mongoose'
 
-      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg.newdatabox/authorized_keys"
-      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/kiteorg.newdatabox/authorized_keys", (parseInt '0600', 8)
-      chown_stub = sinon.stub(child_process, 'exec').withArgs("chown kiteorg.newdatabox: /opt/cobalt/etc/sshkeys/kiteorg.newdatabox/authorized_keys").callsArg(1)
+      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
+      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", (parseInt '0600', 8)
+      chown_stub = sinon.stub(child_process, 'exec').withArgs("chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys").callsArg(1)
 
       # TODO: icky, we want fixtures or mocking
       User.collection.drop ->
         Box.collection.drop ->
           new User({apikey: apikey, shortname: 'kiteorg'}).save ->
             User.findOne {apikey: apikey}, (err, user) ->
-              new Box({user: user._id, name: 'kiteorg/newdatabox'}).save ->
+              new Box({user: user._id, name: 'newdatabox'}).save ->
                 SSHKey.collection.drop ->
                   done()
 
@@ -127,7 +127,7 @@ describe 'SSH keys:', ->
 
         request.post options, (err, resp, body) ->
           resp.statusCode.should.equal 403
-          (_.isEqual (JSON.parse resp.body), {"error":"Unauthorised"}).should.be.true
+          resp.body.should.include "Unauthorised"
           done()
 
     describe "when the box doesn't exist", ->

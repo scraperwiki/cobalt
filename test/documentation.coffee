@@ -15,11 +15,11 @@ Box = require 'models/box'
 nocks = require '../test/nocks'
 
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
-baseurl = 'http://127.0.0.1:3000/'
+baseurl = 'http://127.0.0.1:3000'
 
 APIKEY = '342709d1-45b0-2d2e-sd66-6fb81d10e34e'
-BOX = 'kiteorg/oldproject'
-box_url = baseurl + BOX
+BOX = 'oldproject'
+box_url = "#{baseurl}/#{BOX}"
 
 describe 'Box documentation', ->
   read_stub = null
@@ -43,18 +43,17 @@ describe 'Box documentation', ->
         JSON.parse resp.body
         done()
 
-  describe '( GET /<org>/<project> )', ->
+  describe '( GET /<boxname> )', ->
 
     before (done) ->
       User.collection.drop ->
         Box.collection.drop ->
 
-        shortname = BOX.split('/')[0]
+        shortname = BOX
         new User({apikey: APIKEY, shortname: shortname}).save ->
           User.findOne {apikey: APIKEY}, (err, user) ->
             console.log err if err
-            new Box({user: user._id, name: BOX}).save ->
-              done()
+            new Box({user: user._id, name: BOX}).save done
 
     it 'documents how to SSH into a box', (done) ->
       request.get {url:box_url}, (err, resp, body) ->
@@ -75,7 +74,7 @@ describe 'Box documentation', ->
     it 'documents how to access SQLite endpoint of box', (done) ->
       request.get {url:box_url}, (err, resp, body) ->
         resp.statusCode.should.equal 200
-        resp.body.should.include 'https://127.0.0.1:3000/' + BOX + '/sqlite'
+        resp.body.should.include "#{baseurl.replace('http','https')}/#{BOX}/sqlite"
         JSON.parse resp.body
         done()
 
