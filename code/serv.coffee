@@ -205,8 +205,8 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
   boxname = req.params.newboxname
   re = /^[a-zA-Z0-9_+-]+$/
   if not re.test boxname
-    return res.send {error:
-      "Box name should match the regular expression #{String(re)}"}, 404
+    return res.send 404,
+      error: "Box name should match the regular expression #{String(re)}"
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     console.tick "found user (again) #{boxname}"
     return res.send 404, {error: "User not found" } unless user?
@@ -218,7 +218,7 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
         console.tick "created database entity: box #{boxname}"
         if err
           console.log "Creating box: #{err} "
-          return res.send {error: "Unknown error"}
+          return res.send 404, {error: "Unknown error"}
         exports.unix_user_add boxname, (err, stdout, stderr) ->
           console.tick "added unix user #{boxname}"
           any_stderr = stderr is not ''
