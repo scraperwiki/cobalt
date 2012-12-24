@@ -132,15 +132,12 @@ app.get "/:boxname/?", (req, res) ->
           publish_token: if authorised and settings.publish_token then settings.publish_token else undefined
 
 # Get file
-app.get "/:profile/:project/files/*", check_api_key
-app.get "/:profile/:project/files/*", (req, res) ->
+app.get "/:boxname/files/*", check_api_key, (req, res) ->
   res.removeHeader('Content-Type')
-  user_name = req.params.profile + '.' + req.params.project
-  box_name = req.params.profile + '/' + req.params.project
-  path = req.path.replace "/#{box_name}/files", ''
+  boxname = req.params.boxname
+  path = req.path.replace "/#{boxname}/files", ''
   path = path.replace /\'/g, ''
-  user_name = user_name.replace /\'/g, ''
-  su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{user_name}"]
+  su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{boxname}"]
   su.stdout.on 'data', (data) ->
       res.write data
   su.stderr.on 'data', (data) ->
@@ -157,13 +154,11 @@ console.tick = (stuff...) ->
   console.log.apply console, [(new Date()).toISOString()].concat(stuff)
 
 # Exec endpoint - see wiki for note about security
-app.post "/:profile/:project/exec/?", check_api_key
-app.post "/:profile/:project/exec/?", (req, res) ->
-  console.tick "got POST exec #{req.params.profile}/#{req.params.project} #{req.body.cmd}"
+app.post "/:boxname/exec/?", check_api_key, (req, res) ->
+  console.tick "got POST exec #{req.params.boxname} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
-  user_name = req.params.profile + '.' + req.params.project
   cmd = req.body.cmd
-  su = child_process.spawn "su", ["-c", "#{cmd}", "#{user_name}"]
+  su = child_process.spawn "su", ["-c", "#{cmd}", "#{req.params.boxname}"]
   su.stdout.on 'data', (data) ->
     res.write data
   su.stderr.on 'data', (data) ->
