@@ -71,8 +71,10 @@ check_auth = (apikey, callback) ->
       callback false, null
 
 # Middleware that checks apikey and issues HTTP status as appropriate.
-# :todo: could check apikey against the one that was originally used to
-# create the box.
+# If authorised, req.user is set.
+# If a "boxname" parameter is part of the route, then the apikey is checked
+# against the box (specifically, that the user of the apikey is the user that
+# originally created the box), req.box is set.
 check_api_key = (req, res, next) ->
   res.header('Content-Type', 'application/json')
   apikey = req.body.apikey or req.query.apikey
