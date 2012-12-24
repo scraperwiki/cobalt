@@ -16,7 +16,7 @@ Box = require 'models/box'
 nocks = require '../test/nocks'
 
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
-baseurl = 'http://127.0.0.1:3000/'
+baseurl = 'http://127.0.0.1:3000'
 
 describe 'Creating a box:', ->
   apikey = String(Math.random()).replace('0.', '')
@@ -24,9 +24,10 @@ describe 'Creating a box:', ->
   after ->
     nock.cleanAll()
 
-  describe '( POST /<org>/<project> )', ->
+  describe '( POST /<boxname> )', ->
     server = null
     exec_stub = null
+    newboxname = String(Math.random()).replace('0.','')
 
     before (done) ->
       server = require 'serv'
@@ -39,7 +40,7 @@ describe 'Creating a box:', ->
           new User({apikey: apikey, shortname: 'kiteorg'}).save done
 
     it 'gives an error when creating a databox without a key', (done) ->
-      u = baseurl + 'kiteorg/newdatabox'
+      u = "#{baseurl}/box/#{newboxname}"
       request.post {url:u}, (err, resp, body) ->
         resp.statusCode.should.equal 403
         (_.isEqual (JSON.parse resp.body), {'error':'No API key supplied'}).should.be.true
@@ -50,7 +51,7 @@ describe 'Creating a box:', ->
 
       before (done) ->
         options =
-          uri: baseurl + 'kiteorg/newdatabox'
+          uri: "#{baseurl}/box/#{newboxname}"
           form:
             apikey: apikey
 
@@ -64,16 +65,16 @@ describe 'Creating a box:', ->
 
       it 'calls the useradd command with appropriate args', ->
         exec_stub.called.should.be.true
-        exec_stub.calledWith 'kiteorg/newdatabox'
+        exec_stub.calledWith newboxname
 
       it 'adds the box to the database', (done) ->
-        Box.findOne {name: 'kiteorg/newdatabox'}, (err, box) ->
+        Box.findOne {name: newboxname}, (err, box) ->
           should.exist box
           done()
 
       it 'errors when the box already exists', (done) ->
         options =
-          uri: baseurl + 'kiteorg/newdatabox'
+          uri: "#{baseurl}/box/#{newboxname}"
           form:
             apikey: apikey
 
@@ -88,7 +89,7 @@ describe 'Creating a box:', ->
 
       before (done) ->
         options =
-          uri: baseurl + 'kiteorg/box;with silly characters!'
+          uri: "#{baseurl}/box/box;with silly characters!"
           form:
             apikey: apikey
 
@@ -99,28 +100,11 @@ describe 'Creating a box:', ->
       it "returns an error", ->
         response.statusCode.should.equal 404
 
-    describe 'when we try and impersonate another org', ->
-      response = null
-      apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
-
-      before (done) ->
-        options =
-          uri: baseurl + 'otherorg/box'
-          form:
-            apikey: apikey
-        
-        request.post options, (err, resp, body) ->
-          response = resp
-          done()
-
-      it "returns an error", ->
-        response.statusCode.should.equal 403
-
 
     describe 'when the apikey is invalid', ->
       it 'returns an error', (done) ->
         options =
-          uri: baseurl + 'kiteorg/newdatabox'
+          uri: "#{baseurl}/box/#{newboxname}"
           form:
             apikey: 'junk'
 

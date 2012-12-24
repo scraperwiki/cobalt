@@ -10,7 +10,8 @@
     "ejs": ">0",
     "underscore": ">0",
     "async": "~0.1.22",
-    "bcrypt": "~0.7.3"
+    "bcrypt": "~0.7.3",
+    "nibbler": "git://github.com/mattrobenolt/node_nibbler.git"
   },
   "devDependencies": {
     "mocha": ">=0.4.1",

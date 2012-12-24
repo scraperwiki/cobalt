@@ -63,21 +63,21 @@ box_settings = (user_name, callback) ->
     callback err, {} if err?
 
 # Consult mongo database for specified profile.
-check_auth = (apikey, profile, callback) ->
-  User.findOne {apikey: apikey, shortname: profile}, (err, user) ->
+check_auth = (apikey, callback) ->
+  User.findOne {apikey: apikey}, (err, user) ->
     if user
       callback true
     else
       callback false
 
 # Middleware that checks apikey and issues HTTP status as appropriate.
+# :todo: could check apikey against the one that was originally used to
+# create the box.
 check_api_key = (req, res, next) ->
-  if not req.params.profile?
-    req.params.profile = req.params[0]
   res.header('Content-Type', 'application/json')
   apikey = req.body.apikey or req.query.apikey
   if apikey?
-    check_auth apikey, req.params.profile, (authorised) ->
+    check_auth apikey, (authorised) ->
       if authorised
         return next()
       else
@@ -191,39 +191,32 @@ app.post "/:profile/?", (req, res) ->
             return res.json userobj, 201
 
 # Create a box
-app.post "/:profile/:project/?", check_api_key, (req, res) ->
-  console.tick "got request create box #{req.params.profile}/#{req.params.project}"
+app.post "/box/:boxname/?", check_api_key, (req, res) ->
+  console.tick "got request create box #{req.params.boxname}"
   res.header('Content-Type', 'application/json')
-  user_name = req.params.profile + '.' + req.params.project
-  box_name = req.params.profile + '/' + req.params.project
-  re = /^[a-zA-Z0-9_+-]+\/[a-zA-Z0-9_+-]+$/
-  if not re.test box_name
+  boxname = req.params.boxname
+  re = /^[a-zA-Z0-9_+-]+$/
+  if not re.test boxname
     return res.send {error:
       "Box name should match the regular expression #{String(re)}"}, 404
-  # :todo: eventually users using apikeys from ScraperWiki classic won't be allowed,
-  # in which case we won't need to create a User object here.
-  new User({apikey: req.body.apikey, shortname: req.params.profile}).save (err) ->
-    console.tick "created database entity: user #{req.params.profile}/#{req.params.project}"
-    User.findOne {apikey: req.body.apikey}, (err, user) ->
-      console.tick "found user (again) #{req.params.profile}/#{req.params.project}"
-      return res.send {error: "User not found" }, 404 unless user?
-      Box.findOne {name: box_name}, (err, box) ->
-        console.tick "checked box existence #{req.params.profile}/#{req.params.project}"
-        if box
-          return res.send {error: "Box already exists"}
-        else
-          new Box({user: user._id, name: box_name}).save (err) ->
-            console.tick "created database entity: box #{req.params.profile}/#{req.params.project}"
-            if err
-              console.log "Creating box: #{err} "
-              return res.send {error: "Unknown error"}
-            else
-              exports.unix_user_add user_name, (err, stdout, stderr) ->
-                console.tick "added unix user #{req.params.profile}/#{req.params.project}"
-                any_stderr = stderr is not ''
-                console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
-                return res.send {error: "Unable to create box"} if err? or any_stderr
-                return res.send {status: "ok"}
+  User.findOne {apikey: req.body.apikey}, (err, user) ->
+    console.tick "found user (again) #{req.params.boxname}"
+    return res.send 404, {error: "User not found" } unless user?
+    Box.findOne {name: boxname}, (err, box) ->
+      console.tick "checked box existence #{req.params.boxname}"
+      if box
+        return res.send {error: "Box already exists"}
+      new Box({user: user._id, name: boxname}).save (err) ->
+        console.tick "created database entity: box #{req.params.boxname}"
+        if err
+          console.log "Creating box: #{err} "
+          return res.send {error: "Unknown error"}
+        exports.unix_user_add boxname, (err, stdout, stderr) ->
+          console.tick "added unix user #{req.params.boxname}"
+          any_stderr = stderr is not ''
+          console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
+          return res.send {error: "Unable to create box"} if err? or any_stderr
+          return res.send {status: "ok"}
 
 # Add an SSH key to a box
 app.post "/:profile/:project/sshkeys/?", check_api_key, (req, res) ->
