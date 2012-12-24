@@ -190,12 +190,9 @@ app.post "/:profile/?", (req, res) ->
       ).save (err) ->
         console.log err
         User.findOne {shortname: req.params.profile}, (err, user) ->
-          token = String(Math.random()).replace('0.', '')
-          new Token({token: token, shortname: user.shortname}).save (err) ->
-            # 201 Created, RFC2616
-            userobj = user.objectify()
-            userobj.token = token
-            return res.json userobj, 201
+          userobj = user.objectify()
+          # 201 Created, RFC2616
+          return res.json userobj, 201
 
 # Create a box.
 # Calling the parameter "newboxname" avoids the check in check_api_key that the
