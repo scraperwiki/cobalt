@@ -396,6 +396,17 @@ describe 'Integration testing', ->
         it 'has value 49', ->
           (JSON.parse resp.body)[0]['num*num'].should.equal 49
 
+      it 'redirected for legacy URLs with / in box name', (done) ->
+          legacy_boxname = boxname.replace('.', '/')
+          request.get
+            uri: "#{baseurl}/#{legacy_boxname}/0123456789/sqlite/"
+            qs: options.qs
+            followRedirect:false
+            , (err, resp, body) ->
+              resp.should.have.status 301
+              done()
+
+
     describe 'without a publishing token set in scraperwiki.json', ->
       before (done) ->
         scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", done
