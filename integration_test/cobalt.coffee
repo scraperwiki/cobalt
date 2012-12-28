@@ -255,27 +255,6 @@ describe 'Integration testing', ->
               resp.should.have.status 404
               done()
 
-    describe "...files API...", ->
-      it 'I can see my README.md file using the files API', (done) ->
-        options =
-            uri: "#{baseurl}/#{boxname}/files/README.md"
-            qs:
-              apikey: cobalt_api_key
-        request.get options, (err, resp, body) ->
-          body.should.include "# ScraperWiki Box: #{boxname} #"
-          resp.should.have.status 200
-          done()
-
-      it 'I can see my index.html file using the files API', (done) ->
-        options =
-            uri: "#{baseurl}/#{boxname}/files/http/index.html"
-            qs:
-              apikey: cobalt_api_key
-        request.get options, (err, resp, body) ->
-          body.should.equal 'Testing'
-          resp.should.have.status 200
-          done()
-
     describe "...exec API...", ->
       it 'I can cat my README.md', (done) ->
         options =

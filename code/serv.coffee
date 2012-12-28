@@ -131,20 +131,6 @@ app.get "/:boxname/?", (req, res) ->
           server_hostname: server_hostname
           publish_token: if authorised and settings.publish_token then settings.publish_token else undefined
 
-# Get file
-app.get "/:boxname/files/*", check_api_key, (req, res) ->
-  res.removeHeader('Content-Type')
-  boxname = req.params.boxname
-  path = req.path.replace "/#{boxname}/files", ''
-  path = path.replace /\'/g, ''
-  su = child_process.spawn "su", ["-c", "cat '/home#{path}'", "#{boxname}"]
-  su.stdout.on 'data', (data) ->
-      res.write data
-  su.stderr.on 'data', (data) ->
-      res.send {error:"Error reading #{path}"}, 500
-  su.on 'exit', (code) ->
-      res.end()
-
 
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
