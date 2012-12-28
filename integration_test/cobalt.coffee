@@ -238,6 +238,16 @@ describe 'Integration testing', ->
                 resp.should.have.status 301
                 done()
 
+        it 'I am redirected to the right place for legacy URLs with / in box name', (done) ->
+            legacy_boxname = boxname.replace('.', '/')
+            request.get
+              uri: "#{baseurl}/#{legacy_boxname}/0123456789/http/index.html"
+              followRedirect:true
+              , (err, resp, body) ->
+                resp.should.have.status 200
+                body.should.equal 'Testing'
+                done()
+
       describe 'without a publishing token set in scraperwiki.json', ->
         it "404s if a token is used", (done) ->
           scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
@@ -405,6 +415,19 @@ describe 'Integration testing', ->
             , (err, resp, body) ->
               resp.should.have.status 301
               done()
+
+      it 'redirected to the right place for legacy URLs with / in box name', (done) ->
+          legacy_boxname = boxname.replace('.', '/')
+          request.get
+            uri: "#{baseurl}/#{legacy_boxname}/0123456789/sqlite/"
+            qs: options.qs
+            followRedirect:true
+            , (err, resp, body) ->
+              resp.should.have.status 200
+              should.exist (JSON.parse resp.body)
+              (JSON.parse resp.body)[0]['num*num'].should.equal 49
+              done()
+
 
 
     describe 'without a publishing token set in scraperwiki.json', ->
