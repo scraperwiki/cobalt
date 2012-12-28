@@ -198,7 +198,7 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
   boxname = req.params.newboxname
-  re = /^[a-zA-Z0-9_+-]+$/
+  re = /^[a-zA-Z0-9_+-.]+$/
   if not re.test boxname
     return res.send 404,
       error: "Box name should match the regular expression #{String(re)}"

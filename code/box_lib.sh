@@ -65,8 +65,7 @@ furnish_as_user() {
   sh $TEMPLATES/scraperwiki.json.template > scraperwiki.json
 
   # README.md
-  asURL=$(echo $BOXNAME|sed 's/\./\//')
-  sh $TEMPLATES/README.md.template $asURL > README.md
+  sh $TEMPLATES/README.md.template $BOXNAME > README.md
 
   # Initiate git repository.
   git init .

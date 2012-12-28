@@ -12,7 +12,7 @@ baseurl = "http://#{host}"
 
 cobalt_api_key = process.env.COTEST_USER_API_KEY
 staff_api_key = process.env.COTEST_STAFF_API_KEY
-boxname = 'cotest-' + String(Math.random()).replace(/\./,'')
+boxname = 'cotest.' + String(Math.random()).replace(/\./,'')
 fresh_username = ->
   'nu' + String(Math.random()).replace(/\./,'')
 ssh_boxname = boxname
@@ -228,6 +228,15 @@ describe 'Integration testing', ->
               resp.should.have.status 200
               body.should.equal 'Testing'
               done()
+
+        it 'I am redirected for legacy URLs with / in box name', (done) ->
+            legacy_boxname = boxname.replace('.', '/')
+            request.get
+              uri: "#{baseurl}/#{legacy_boxname}/0123456789/http/index.html"
+              followRedirect:false
+              , (err, resp, body) ->
+                resp.should.have.status 301
+                done()
 
       describe 'without a publishing token set in scraperwiki.json', ->
         it "404s if a token is used", (done) ->
