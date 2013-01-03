@@ -62,7 +62,7 @@ describe 'Integration testing', ->
       should.exist staff_api_key
       newuser = fresh_username()
       options =
-        uri: "http://#{host}/#{newuser}"
+        uri: "#{baseurl}/#{newuser}"
         form:
           apikey: staff_api_key
       request.post options, (err, resp, body) ->
@@ -156,8 +156,8 @@ describe 'Integration testing', ->
         done()
 
     it 'SFTP works', (done) ->
-      ssh = "echo ls | sftp  #{ssh_user_args.join ' '} #{host}"
-      exec ssh, (err, stdout, stderr) ->
+      cmd = "echo ls | sftp  #{ssh_user_args.join ' '} #{host}"
+      exec cmd, (err, stdout, stderr) ->
         should.not.exist err
         done()
 
@@ -216,27 +216,19 @@ describe 'Integration testing', ->
             jai_fini()
 
       describe 'with a publishing token set in scraperwiki.json', ->
-        it "doesn't allow access if wrong", (done) ->
+        it "forbids access when using wrong token", (done) ->
           scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
-            request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
+            url = "#{baseurl}/#{boxname}/0987654321/http/"
+            request.get url, (err, resp, body) ->
               resp.should.have.status 403
               done()
 
-        it "allows access with it", (done) ->
+        it "allows access when using correct token", (done) ->
           scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
             request.get "#{baseurl}/#{boxname}/0123456789/http/", (err, resp, body) ->
               resp.should.have.status 200
               body.should.equal 'Testing'
               done()
-
-        it 'I am redirected for legacy URLs with / in box name', (done) ->
-            legacy_boxname = boxname.replace('.', '/')
-            request.get
-              uri: "#{baseurl}/#{legacy_boxname}/0123456789/http/index.html"
-              followRedirect:false
-              , (err, resp, body) ->
-                resp.should.have.status 301
-                done()
 
         it 'I am redirected to the right place for legacy URLs with / in box name', (done) ->
             legacy_boxname = boxname.replace('.', '/')
@@ -244,6 +236,7 @@ describe 'Integration testing', ->
               uri: "#{baseurl}/#{legacy_boxname}/0123456789/http/index.html"
               followRedirect:true
               , (err, resp, body) ->
+                resp.request.redirects.length.should.be.above 0
                 resp.should.have.status 200
                 body.should.equal 'Testing'
                 done()
