@@ -85,6 +85,7 @@ describe 'Upload file to box', ->
         form.append('file', fs.createReadStream("test/box_upload.coffee"))
         form.append("randomkey", "randomvalue")
         form.append("apikey", apikey)
+        form.append("next", "/then")
         headers = form.getHeaders()
         # mikeal's request overwrites headers (if form is
         # specified), so we have to use plain-old http.request.
@@ -99,8 +100,9 @@ describe 'Upload file to box', ->
           @resp = resp
           done()
 
-      it "has OK status", ->
-        @resp.statusCode.should.equal 200
+      it "redirects", ->
+        @resp.statusCode.should.equal 301
+        @resp.headers.location.should.match /^.then/
 
       it "uploads file to box's incoming directory", ->
         (@exec_stub.calledWithMatch /mv.*newdatabox/).should.be.true

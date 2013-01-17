@@ -259,10 +259,12 @@ app.post "/:boxname/file/?", check_api_key, (req, res) ->
     return res.send 400, { error: "no file" }
   
   # Remove all characters apart from a few select safe ones.
-  file.name = file.name.replace /[^a-zA-Z0-9_+-]/g, ''
+  file.name = file.name.replace /[^.a-zA-Z0-9_+-]/g, ''
   child_process.exec "mv #{file.path} #{dir}/#{file.name}", ->
     child_process.exec "chown #{boxname}: #{dir}/#{file.name}", ->
-      return res.send 200, filename: "#{dir}/#{file.name}"
+      next = req.body.next || "/"
+      next = "#{next}##{dir}/#{file.name}"
+      return res.redirect 301, next
 
 app.listen port
 if existsSync(port) && fs.lstatSync(port).isSocket()
