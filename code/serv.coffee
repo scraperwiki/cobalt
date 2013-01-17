@@ -243,6 +243,14 @@ app.post "/:boxname/sshkeys/?", check_api_key, (req, res) ->
         console.log "ERROR: #{err}, stderr: #{stderr}"
         return res.send {"error": "Internal creation error"}
 
+# Add a file to a box
+app.post "/:boxname/file/?", check_api_key, (req, res) ->
+  boxname = req.params.boxname
+  # console.dir req.files
+  # console.log req.body
+  # console.dir req.headers
+  return res.send 200, { params: req.params, body: req.body }
+
 app.listen port
 if existsSync(port) && fs.lstatSync(port).isSocket()
   fs.chmodSync port, 0o600
