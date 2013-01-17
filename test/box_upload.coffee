@@ -70,25 +70,40 @@ describe 'Upload file to box', ->
         path: "/newdatabox/file/"
         headers: headers
       form.pipe request
-      request.on 'response', (resp, body) ->
+      request.on 'response', (resp) ->
         resp.statusCode.should.equal 403
         done()
 
-#     describe 'when the apikey is valid and box exists', ->
-#       response = null
-#       exec_stub = null
-# 
-#       before (done) ->
-# 
-#         options =
-#           uri: URL
-#           form:
-#             apikey: apikey
-# 
-#         request.post options, (err, resp, body) ->
-#             response = resp
-#             done()
-# 
-#       it "doesn't return an error", ->
-#         # it will probably return a 301, right?
-#         response.statusCode.should.equal 200
+    describe 'when the API key is valid', ->
+      before ->
+        @exec_stub = sinon.stub(child_process, 'exec').callsArg(1)
+        sinon.stub(fs, 'existsSync').returns(true)
+        sinon.stub(fs, 'statSync').returns(isDirectory: -> true)
+
+      before (done) ->
+        form = new FormData()
+        form.append('file', fs.createReadStream("test/box_upload.coffee"))
+        form.append("randomkey", "randomvalue")
+        form.append("apikey", apikey)
+        headers = form.getHeaders()
+        # mikeal's request overwrites headers (if form is
+        # specified), so we have to use plain-old http.request.
+        request = http.request
+          method: 'post'
+          host: "localhost"
+          port: 3000
+          path: "/newdatabox/file/"
+          headers: headers
+        form.pipe request
+        request.on 'response', (resp) =>
+          @resp = resp
+          done()
+
+      it "has OK status", ->
+        @resp.statusCode.should.equal 200
+
+      it "uploads file to box's incoming directory", ->
+        (@exec_stub.calledWithMatch /mv.*newdatabox/).should.be.true
+        
+      it "chowns the file", ->
+        (@exec_stub.calledWithMatch /chown.*newdatabox/).should.be.true

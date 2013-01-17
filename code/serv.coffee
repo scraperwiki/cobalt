@@ -246,10 +246,23 @@ app.post "/:boxname/sshkeys/?", check_api_key, (req, res) ->
 # Add a file to a box
 app.post "/:boxname/file/?", check_api_key, (req, res) ->
   boxname = req.params.boxname
-  # console.dir req.files
-  # console.log req.body
-  # console.dir req.headers
-  return res.send 200, { params: req.params, body: req.body }
+  dir = "/home/#{boxname}/incoming"
+  existsSync = fs.existsSync || path.existsSync
+  if ! existsSync dir
+    console.log "no #{dir}"
+    return res.send 404, { error: "no ~/incoming directory" }
+  if ! fs.statSync(dir).isDirectory()
+    console.log "not dir #{dir}"
+    return res.send 404, { error: "~/incoming is not a directory" }
+  file = req.files.file
+  if ! file
+    return res.send 400, { error: "no file" }
+  
+  # Remove all characters apart from a few select safe ones.
+  file.name = file.name.replace /[^a-zA-Z0-9_+-]/g, ''
+  child_process.exec "mv #{file.path} #{dir}/#{file.name}", ->
+    child_process.exec "chown #{boxname}: #{dir}/#{file.name}", ->
+      return res.send 200, filename: "#{dir}/#{file.name}"
 
 app.listen port
 if existsSync(port) && fs.lstatSync(port).isSocket()
