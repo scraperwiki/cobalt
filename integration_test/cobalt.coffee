@@ -2,10 +2,13 @@
 
 {exec} = require 'child_process'
 fs = require 'fs'
+http = require 'http'
+
 # https://github.com/mikeal/request
 request = require 'request'
 should = require 'should'
 _ = require 'underscore'
+FormData = require 'form-data'
 
 host = process.env.COBALT_INTEGRATION_TEST_SERVER or 'boxecutor-int-test-0.scraperwiki.net'
 baseurl = "http://#{host}"
@@ -297,6 +300,25 @@ describe 'Integration testing', ->
             done()
 
 
+
+    describe "...POST file...", ->
+      before (done) ->
+        ssh_cmd "mkdir /home/incoming", done
+
+      before (done) ->
+        [t_, host] = baseurl.match /http:\/\/(.+)/
+        form = new FormData()
+        file = fs.readFileSync("test/box_upload.coffee")
+        form.append 'file', file
+        form.append "apikey", cobalt_api_key
+        form.append "next", "/then"
+        form.submit "#{baseurl}/#{boxname}/file", (err, res) =>
+          @resp = res
+          done()
+
+
+      xit 'returns a redirect', ->
+        @resp.statusCode.should.equal 301
 
     describe '...symlinks...', ->
       before (done) ->
