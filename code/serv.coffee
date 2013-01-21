@@ -266,10 +266,13 @@ app.post "/:boxname/file/?", check_api_key, (req, res) ->
       next = "#{next}##{dir}/#{file.name}"
       return res.redirect 301, next
 
-app.listen port
-if existsSync(port) && fs.lstatSync(port).isSocket()
-  fs.chmodSync port, 0o600
-  child_process.exec "chown www-data #{port}"
+if existsSync(port)
+  fs.unlinkSync port
+
+app.listen port, ->
+  if existsSync(port)
+    fs.chmodSync port, 0o600
+    child_process.exec "chown www-data #{port}"
 
 
 exports.unix_user_add = (user_name, callback) ->
