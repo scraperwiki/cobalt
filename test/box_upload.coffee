@@ -80,6 +80,11 @@ describe 'Upload file to box', ->
         sinon.stub(fs, 'existsSync').returns(true)
         sinon.stub(fs, 'statSync').returns(isDirectory: -> true)
 
+      after ->
+        child_process.exec.restore()
+        fs.existsSync.restore()
+        fs.statSync.restore()
+
       before (done) ->
         form = new FormData()
         form.append('file', fs.createReadStream("test/box_upload.coffee"))

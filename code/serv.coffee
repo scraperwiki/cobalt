@@ -263,7 +263,17 @@ app.post "/:boxname/file/?", check_api_key, (req, res) ->
   child_process.exec "mv #{file.path} #{dir}/#{file.name}", ->
     child_process.exec "chown #{boxname}: #{dir}/#{file.name}", ->
       next = req.body.next || "/"
-      next = "#{next}##{dir}/#{file.name}"
+      # TODO: there must be a better way of doing this, 
+      # perhaps easyXDM with file upload + metadata calls
+      # If there's a # in the URL, read the JSON object out
+      if next.indexOf('#') > -1
+        text = decodeURIComponent(next)
+        obj = JSON.parse text.substr(text.indexOf '{')
+        obj.filePath = file.name
+        json = encodeURIComponent JSON.stringify(obj)
+        next = "#{next.split('#')[0]}##{json}"
+      else
+        next = "#{next}##{dir}/#{file.name}"
       return res.redirect 301, next
 
 if existsSync(port)
