@@ -75,6 +75,9 @@ furnish_as_user() {
 
   # create public http directory
   mkdir http
+  
+  # create incoming directory for file uploads
+  mkdir incoming
 
 }
 
