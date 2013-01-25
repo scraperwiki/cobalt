@@ -303,9 +303,6 @@ describe 'Integration testing', ->
 
     describe "...POST file...", ->
       before (done) ->
-        ssh_cmd "mkdir /home/incoming", done
-
-      before (done) ->
         [t_, host] = baseurl.match /http:\/\/(.+)/
         form = new FormData()
         file = fs.readFileSync("test/box_upload.coffee")
