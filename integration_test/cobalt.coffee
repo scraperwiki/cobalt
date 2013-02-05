@@ -441,6 +441,12 @@ describe 'Integration testing', ->
           should.exist body.match(/^ploq\(/)
           done()
 
+  describe 'Custard(!)', ->
+    context 'when a box uses the status endpoint (without a dataset)', ->
+      it 'gets its box name back in an error message', (done) ->
+        ssh_cmd """curl -d "message=sdfsdf" http://x-dev.scraperwiki.com/api/status""", (err, stdout, stderr) ->
+          stdout.should.include boxname
+          done()
 
   describe 'When Cobalt has started', ->
     before (done) ->
