@@ -7,7 +7,7 @@ scraperwiki.xdm = new easyXDM.Rpc({
     onReady: function(){
         iframe = document.createElement("iframe");
         iframe.frameBorder = 0;
-        iframe.src= 'http/index.html' + location.hash
+        iframe.src= 'http/' + location.hash
         iframe.width = '100%'
         iframe.height = '100%'
         document.body.appendChild(iframe);
