@@ -50,6 +50,21 @@
     "",
     "g) Command execution API",
     "Specify the command to execute by POSTing your 'apikey' and 'cmd' to:",
-    "https://<%= server_hostname %>/<%= box_name %>/exec"
+    "https://<%= server_hostname %>/<%= box_name %>/exec",
+    "",
+    "h) File upload API",
+    "Cobalt boxes come with a file upload endpoint, allowing you to",
+    "write datasets/tools that accept a user's files as input.",
+    "",
+    "POST http://box.scraperwiki.com/<boxName>/file/",
+    "Like the exec endpoint, you must supply the box's apikey as a",
+    "POST parameter to use the file endpoint. You will additionally",
+    "want to supply a next url (as an additional parameter), to which",
+    "the user will be redirected once their file has uploaded.",
+    "",
+    "The file should be uploaded just like file upload form in HTML.",
+    "For an example, see the FORM element on our",
+    "spreadsheet-upload-tool:",
+    "https://github.com/scraperwiki/spreadsheet-upload-tool/blob/master/http/index.html"
   ]
 }
