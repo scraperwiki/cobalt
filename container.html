@@ -1,0 +1,26 @@
+<html>
+<script src="//cdn.jsdelivr.net/easyxdm/2.4.17.1/easyXDM.js"></script>
+<script type="text/javascript">
+scraperwiki = {}
+// This is the provider side of XDM.
+scraperwiki.xdm = new easyXDM.Rpc({
+    onReady: function(){
+        iframe = document.createElement("iframe");
+        iframe.frameBorder = 0;
+        iframe.src= 'http/index.html' + location.hash
+        iframe.width = '100%'
+        iframe.height = '100%'
+        document.body.appendChild(iframe);
+    },
+  }, {
+    remote: {
+      // redirect and get URL are the names of methods implemented
+      // by custard
+      redirect: {},
+      getURL: {}
+    }
+  });
+</script>
+<body>
+</body>
+</html>
