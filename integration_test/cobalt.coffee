@@ -257,7 +257,7 @@ describe 'Integration testing', ->
             uri: "#{baseurl}/#{boxname}/exec"
             form:
               apikey: cobalt_api_key
-              cmd: "cat ~/README.md"
+              cmd: "cat README.md"
         request.post options, (err, resp, body) ->
           body.should.include "# ScraperWiki Box: #{boxname} #"
           resp.should.have.status 200

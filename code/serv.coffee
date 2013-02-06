@@ -144,7 +144,7 @@ app.post "/:boxname/exec/?", check_api_key, (req, res) ->
   console.tick "got POST exec #{req.params.boxname} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
   cmd = req.body.cmd
-  su = child_process.spawn "su", ["-c", "#{cmd}", "#{req.params.boxname}"]
+  su = child_process.spawn "su", ["-", "-c", "#{cmd}", "#{req.params.boxname}"]
   su.stdout.on 'data', (data) ->
     res.write data
   su.stderr.on 'data', (data) ->
