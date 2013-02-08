@@ -178,15 +178,6 @@ describe 'Integration testing', ->
         stdout.should.include "https://box.scraperwiki.com/#{boxname}"
         done()
 
-    it 'I have a git repo with a default .gitignore and initial commit', (done) ->
-      ssh_cmd "git log", (err, stdout, stderr) ->
-        should.not.exist err
-        stderr.should.be.empty
-        ssh_cmd "git show README.md .gitignore", (err, stdout, stderr) ->
-          should.not.exist err
-          stderr.should.be.empty
-          done()
-
     it "I cannot see any other box (i.e. I'm chrooted)", (done) ->
       ssh_cmd "ls -di", (err, stdout, stderr) ->
         should.not.exist err
