@@ -59,13 +59,10 @@ furnish_as_user() {
   # Go home.  Note: We're not chrooted.
   cd /home/"$BOXNAME"
 
-  # scraperwiki.json file
+  # box file
   # Slightly hairy shell, because the .json file cannot end in a
   # newline.
-  sh $TEMPLATES/scraperwiki.json.template > scraperwiki.json
-
-  # README.md
-  sh $TEMPLATES/README.md.template $BOXNAME > README.md
+  sh $TEMPLATES/box.json.template > box.json
 
   # create public http directory
   mkdir http

@@ -164,8 +164,8 @@ describe 'Integration testing', ->
         should.not.exist err
         done()
 
-    it 'I have some default values in scraperwiki.json', (done) ->
-      ssh_cmd "cat ~/scraperwiki.json", (err, stdout, stderr) ->
+    it 'I have some default values in box.json', (done) ->
+      ssh_cmd "cat ~/box.json", (err, stdout, stderr) ->
         settings = JSON.parse(stdout)
         settings.database.should.equal "scraperwiki.sqlite"
         settings.publish_token.should.match /[0-9a-z]{15}/
@@ -186,7 +186,7 @@ describe 'Integration testing', ->
 
   describe 'When I publish some files', ->
     before (done) ->
-      scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
+      scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "box.json", ->
         ssh_cmd "echo -n Testing > http/index.html", done
 
     describe "...HTTP...", ->
@@ -209,16 +209,16 @@ describe 'Integration testing', ->
             body.should.include 'Index of'
             jai_fini()
 
-      describe 'with a publishing token set in scraperwiki.json', ->
+      describe 'with a publishing token set in box.json', ->
         it "forbids access when using wrong token", (done) ->
-          scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
+          scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "box.json", ->
             url = "#{baseurl}/#{boxname}/0987654321/http/"
             request.get url, (err, resp, body) ->
               resp.should.have.status 403
               done()
 
         it "allows access when using correct token", (done) ->
-          scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", ->
+          scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "box.json", ->
             request.get "#{baseurl}/#{boxname}/0123456789/http/", (err, resp, body) ->
               resp.should.have.status 200
               body.should.equal 'Testing'
@@ -235,9 +235,9 @@ describe 'Integration testing', ->
                 body.should.equal 'Testing'
                 done()
 
-      describe 'without a publishing token set in scraperwiki.json', ->
+      describe 'without a publishing token set in box.json', ->
         it "404s if a token is used", (done) ->
-          scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
+          scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "box.json", ->
             request.get "#{baseurl}/#{boxname}/0987654321/http/", (err, resp, body) ->
               resp.should.have.status 404
               done()
@@ -310,8 +310,8 @@ describe 'Integration testing', ->
 
     describe '...symlinks...', ->
       before (done) ->
-        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", ->
-          ssh_cmd "ln -s /etc/shadow ~/http/nawty; ln -s ../scraperwiki.json ~/http/nice ", done
+        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "box.json", ->
+          ssh_cmd "ln -s /etc/shadow ~/http/nawty; ln -s ../box.json ~/http/nice ", done
 
       it 'I can follow my own symlinks', (done) ->
         request.get "#{baseurl}/#{boxname}/http/nice", (err, resp, body) ->
@@ -360,9 +360,9 @@ describe 'Integration testing', ->
     before (done) ->
       ssh_cmd '''echo "create table swdata (num int); insert into swdata values (7);" | sqlite3 test.sqlite''', done
 
-    describe 'with a publishing token set in scraperwiki.json', ->
+    describe 'with a publishing token set in box.json', ->
       before (done) ->
-        scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "scraperwiki.json", done
+        scp_cmd "./integration_test/fixtures/scraperwiki-publishtoken.json", "box.json", done
 
       describe 'when wrong', ->
         before (done) ->
@@ -412,9 +412,9 @@ describe 'Integration testing', ->
 
 
 
-    describe 'without a publishing token set in scraperwiki.json', ->
+    describe 'without a publishing token set in box.json', ->
       before (done) ->
-        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "scraperwiki.json", done
+        scp_cmd "./integration_test/fixtures/scraperwiki-database.json", "box.json", done
 
       it "404s if a token is used", (done) ->
         request.get { uri: "#{baseurl}/#{boxname}/0123456789/sqlite/", qs: options.qs }, (err, r, body) ->

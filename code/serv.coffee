@@ -56,7 +56,7 @@ parse_settings = (text) ->
     return false
 
 box_settings = (user_name, callback) ->
-  fs.readFile "/home/#{user_name}/scraperwiki.json", 'utf-8', (err, data) ->
+  fs.readFile "/home/#{user_name}/box.json", 'utf-8', (err, data) ->
     settings = parse_settings data
     callback 'not json', {} if not settings
     callback null, settings if not err?

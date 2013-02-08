@@ -1,7 +1,0 @@
-cat <<EOF
-# ScraperWiki Box: $1 #
-
-https://box.scraperwiki.com/$1
-
-Describe your box in here!
-EOF

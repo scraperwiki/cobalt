@@ -26,7 +26,7 @@ describe 'Box documentation', ->
 
   beforeEach ->
     read_stub = sinon.stub(fs, 'readFile')
-      .withArgs("/home/#{BOX}/scraperwiki.json")
+      .withArgs("/home/#{BOX}/box.json")
       .callsArgWith(2, {code: 'ENOENT'}, null)
 
   afterEach ->
@@ -94,7 +94,7 @@ describe 'Box documentation', ->
 
         fs.readFile.restore()
         read_stub = sinon.stub(fs, 'readFile')
-          .withArgs("/home/#{BOX}/scraperwiki.json")
+          .withArgs("/home/#{BOX}/box.json")
           .callsArgWith(2, null, JSON.stringify obj)
 
       describe 'when the user has access to the box', ->
