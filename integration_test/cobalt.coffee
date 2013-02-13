@@ -77,21 +77,6 @@ describe 'Integration testing', ->
         newapikey = json.apikey
         done()
 
-    xit 'The new user can see their details', (done) ->
-      should.exist newuser
-      should.exist newapikey
-      options =
-        uri: "http://#{host}/#{newuser}/"
-        qs:
-          apikey: newapikey
-      request.get options, (err, resp, body) ->
-        should.not.exist err
-        resp.statusCode.should.match /^2/
-        json = JSON.parse body
-        newuser.should.equal json.shortname
-        newapikey.should.equal json.apikey
-        done()
-
     it 'The new user can create a box', (done) ->
       myfirstbox = String(Math.random()).replace('0.','')
       options =

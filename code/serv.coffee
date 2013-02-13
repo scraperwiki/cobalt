@@ -107,30 +107,12 @@ fresh_apikey = ->
 # GET REQUESTS
 # These should all be idempotent, i.e. make no changes to the server.
 
-app.get "/", (req, res) ->
+docs = (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.render('index', {rooturl: root_url})
+  res.send "See http://x.scraperwiki.com/docs", 200
 
-app.get "/ierghjoig/:profile/?", check_api_key, (req, res) ->
-  User.findOne {shortname: req.params.profile}, (err, profile) ->
-    res.json profile.objectify()
-
-
-# Documentation for SSHing to a box.
-app.get "/:boxname/?", (req, res) ->
-  boxname = req.params.boxname
-  res.header('Content-Type', 'application/json')
-  check_auth req.query.apikey, (authorised) ->
-    Box.findOne {name: boxname}, (err, box) ->
-      return res.send { error: "Box not found" }, 404 unless box?
-      box_settings boxname, (err, settings) ->
-        res.render 'box',
-          apikey: if authorised then req.query.apikey else '<apikey>'
-          box_name: boxname
-          rooturl: root_url
-          server_hostname: server_hostname
-          publish_token: if authorised and settings.publish_token then settings.publish_token else undefined
-
+app.get "/", docs
+app.get "/:boxname/?", docs
 
 # POST REQUESTS
 # These should make changes somewhere, likely to the mongodb database
