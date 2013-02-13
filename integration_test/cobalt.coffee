@@ -156,13 +156,6 @@ describe 'Integration testing', ->
         settings.publish_token.should.match /[0-9a-z]{15}/
         done()
 
-    it 'I have a README.md with the box URL in', (done) ->
-      ssh_cmd "cat ~/README.md", (err, stdout, stderr) ->
-        should.not.exist err
-        stderr.should.be.empty
-        stdout.should.include "https://box.scraperwiki.com/#{boxname}"
-        done()
-
     it "I cannot see any other box (i.e. I'm chrooted)", (done) ->
       ssh_cmd "ls -di", (err, stdout, stderr) ->
         should.not.exist err
@@ -228,14 +221,13 @@ describe 'Integration testing', ->
               done()
 
     describe "...exec API...", ->
-      it 'I can cat my README.md', (done) ->
+      it 'I can cat my box.json', (done) ->
         options =
             uri: "#{baseurl}/#{boxname}/exec"
             form:
               apikey: cobalt_api_key
-              cmd: "cat README.md"
+              cmd: "cat box.json"
         request.post options, (err, resp, body) ->
-          body.should.include "# ScraperWiki Box: #{boxname} #"
           resp.should.have.status 200
           done()
 
