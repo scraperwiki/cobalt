@@ -16,12 +16,17 @@ bcrypt = require 'bcrypt'
 express = require 'express'
 mongoose = require 'mongoose'
 request = require 'request'
+checkIdent = require 'ident-express'
 
 Box = require 'models/box'
 SSHKey = require 'models/ssh_key'
 User = require 'models/user'
 
 app = express()
+
+# Trust the headers from nginx and change req.ip to the real IP
+# of the connecting dude.
+app.set "trust proxy", true
 
 app.use express.bodyParser()
 
@@ -94,6 +99,27 @@ check_api_key = (req, res, next) ->
         return next()
     else
       return next()
+
+# Middleware that checks the IP address of the connecting
+# partner (which we expect to be custard).
+checkIP = (req, res, next) ->
+  # Relies on app.set "trust proxy", true in order to get
+  # sensible results.
+  # :todo: get these from file or environment variable.
+  allowed = [
+    "127.0.0.1"
+    "178.79.181.194"
+    "192.168.129.215"
+    "178.79.179.106"
+    "192.168.194.236"
+    "176.58.122.74"
+    "192.168.176.192"
+    "178.79.177.136"
+    "192.168.186.120"
+    ]
+  if req.ip in allowed
+    return next()
+  res.send 403, {error: "IP #{req.ip} not allowed"}
 
 rand32 = ->
   # 32 bits of lovely randomness.
@@ -190,40 +216,29 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
           return res.send {status: "ok"}
 
 # Add an SSH key to a box
-app.post "/:boxname/sshkeys/?", check_api_key, (req, res) ->
+app.post "/:boxname/sshkeys/?", checkIP, checkIdent, (req, res) ->
+  if req.ident != 'root'
+    return res.send 400,
+      error: "Only custard running as root can contact me"
   boxname = req.params.boxname
 
   res.header('Content-Type', 'application/json')
-  unless req.body.sshkey? then return res.send { error: "SSH Key not specified" }, 400
+  unless req.body.keys? then return res.send { error: "SSH keys not specified" }, 400
 
-  box = req.box
-  if not box?
-    # Mysterious because check_api_key should have already checked the box
-    return res.send 404, { error: "Mysteriously, box not found" }
-  try
-    name = SSHKey.extract_name req.body.sshkey
-  catch TypeError
-    return res.send 400, { error: "SSH Key format not valid" }
-  unless name then return res.send 400, { error: "SSH Key has no name" }
-  key = new SSHKey
-    box: box._id
-    name: name
-    key: req.body.sshkey
-
-  key.save ->
-    SSHKey.find {box: box._id}, (err, sshkeys) ->
-      keys_path = "/opt/cobalt/etc/sshkeys/#{boxname}/authorized_keys"
-
-      keys = for key in sshkeys
-        "#{key.key}"
-
-      fs.writeFileSync keys_path, keys.join '\n', 'utf8'
-      # Note: octal.  This is deliberate.
-      fs.chmodSync keys_path, 0o600
-      child_process.exec "chown #{boxname}: #{keys_path}", (err, stdout, stderr) -> # insecure
-        return res.send {"status": "ok"} unless err
-        console.log "ERROR: #{err}, stderr: #{stderr}"
-        return res.send {"error": "Internal creation error"}
+  boxname = req.params.boxname
+  dir = "/opt/cobalt/etc/sshkeys/#{boxname}"
+  keysPath = "#{dir}/authorized_keys"
+  fs.exists dir, (exists) ->
+    if not exists
+      return res.send 404, error: "Box #{boxname} not found"
+    keys = JSON.parse req.body.keys
+    fs.writeFileSync keysPath, keys.join '\n', 'utf8'
+    # Note: octal.  This is deliberate.
+    fs.chmodSync keysPath, 0o600
+    child_process.exec "chown #{boxname}: #{keysPath}", (err, stdout, stderr) -> # insecure
+      return res.send {"status": "ok"} unless err
+      console.log "ERROR: #{err}, stderr: #{stderr}"
+      return res.send {"error": "Internal creation error"}
 
 # Add a file to a box
 app.post "/:boxname/file/?", check_api_key, (req, res) ->

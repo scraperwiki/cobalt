@@ -11,7 +11,8 @@
     "underscore": ">0",
     "async": "~0.1.22",
     "bcrypt": "~0.7.3",
-    "nibbler": "git://github.com/mattrobenolt/node_nibbler.git"
+    "nibbler": "git://github.com/mattrobenolt/node_nibbler.git",
+    "ident-express": "~0.0.2"
   },
   "devDependencies": {
     "mocha": ">=0.4.1",

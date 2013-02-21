@@ -14,6 +14,9 @@ should = require 'should'
 sinon  = require 'sinon'
 # http://underscorejs.org/
 _ = require 'underscore'
+# https://github.com/scraperwiki/ident-express
+# So that it appears in require.cache which we stub.
+require 'ident-express'
 
 User = require 'models/user'
 Box = require 'models/box'
@@ -25,45 +28,52 @@ httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 BASE_URL = 'http://127.0.0.1:3000'
 apikey = "342709d1-45b0-4d2e-ad66-6fb81d10e34e"
 
+# Used as a stub.
+existsFake = (path, cb) ->
+  res = /newdatabox/.test path
+  cb res
+
+checkIdentFake = (req, res, next) ->
+  req.ident = 'root'
+  next()
+
 describe 'SSH keys:', ->
   after ->
     nock.cleanAll()
+
+  before ->
+    @checkIdentStub = sinon.stub require.cache[require.resolve 'ident-express'],
+      'exports',
+      checkIdentFake
 
   describe '( POST /<boxname>/sshkeys )', ->
     server = null
     mongoose = null
     write_stub = null
     chmod_stub = null
+    exists_stub = null
     URL = "#{BASE_URL}/newdatabox/sshkeys"
  
     before (done) ->
       server = require 'serv'
       mongoose = require 'mongoose'
 
-      write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
-      chmod_stub = sinon.stub(fs, 'chmodSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", (parseInt '0600', 8)
-      chown_stub = sinon.stub(child_process, 'exec').withArgs("chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys").callsArg(1)
-
-      # TODO: icky, we want fixtures or mocking
-      User.collection.drop ->
-        Box.collection.drop ->
-          new User({apikey: apikey, shortname: 'kiteorg'}).save ->
-            User.findOne {apikey: apikey}, (err, user) ->
-              new Box({user: user._id, name: 'newdatabox'}).save ->
-                SSHKey.collection.drop ->
-                  done()
-
-    it 'returns an error when adding ssh keys without an API key', (done) ->
-      request.post {url:URL, form: {sshkey: 'x'}}, (err, resp, body) ->
-        resp.statusCode.should.equal 403
-        done()
+      write_stub = sinon.stub(fs, 'writeFileSync')
+        .withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
+      chmod_stub = sinon.stub(fs, 'chmodSync')
+        .withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", (parseInt '0600', 8)
+      chown_stub = sinon.stub(child_process, 'exec')
+        .withArgs("chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys").callsArg(1)
+      exists_stub = sinon.stub fs, 'exists', existsFake
+      done()
 
     after ->
       fs.writeFileSync.restore()
       fs.chmodSync.restore()
       child_process.exec.restore()
+      fs.exists.restore()
 
-    describe 'when the apikey is valid and box exists', ->
+    describe 'when the box exists', ->
       response = null
       exec_stub = null
       sshkey =
@@ -76,8 +86,7 @@ describe 'SSH keys:', ->
         options =
           uri: URL
           form:
-            apikey: apikey
-            sshkey: sshkey
+            keys: JSON.stringify [sshkey]
 
         request.post options, (err, resp, body) ->
             response = resp
@@ -86,49 +95,10 @@ describe 'SSH keys:', ->
       it "doesn't return an error", ->
         response.statusCode.should.equal 200
 
-      describe 'when sshkey is present', ->
-        it 'extracts the name from the key', ->
-          SSHKey.extract_name(sshkey).should.equal 'tlevine@motorsag'
-
-        it 'saves the key to the database', (done) ->
-          SSHKey.findOne {name: 'tlevine@motorsag'}, (err, key) ->
-            should.exist key
-            done()
-
+      describe 'when keys are present', ->
         it "overwrites the box's authorized_keys file with all ssh keys", ->
           write_stub.calledOnce.should.be.true
           chmod_stub.calledOnce.should.be.true
-
-    describe 'when the apikey is invalid', ->
-
-      it 'returns an error', (done) ->
-        options =
-          uri: URL
-          form:
-            apikey: 'junk'
-            sshkey: 'blah'
-
-        request.post options, (err, resp, body) ->
-          resp.statusCode.should.equal 403
-          (_.isEqual (JSON.parse resp.body), {"error":"Unauthorised"}).should.be.true
-          done()
-
-    describe 'when the apikey does not belong to the box creator', ->
-      before ->
-        apikey2 = 'otheruserapikey'
-        new User({apikey: apikey2}).save()
-
-      it 'returns an error', (done) ->
-        options =
-          uri: URL
-          form:
-            apikey: 'otheruserapikey'
-            sshkey: 'blah'
-
-        request.post options, (err, resp, body) ->
-          resp.statusCode.should.equal 403
-          resp.body.should.include "Unauthorised"
-          done()
 
     describe "when the box doesn't exist", ->
       response = null
@@ -136,8 +106,7 @@ describe 'SSH keys:', ->
         options =
           uri: URL
           form:
-            apikey: apikey
-            sshkey: 'is not checked'
+            keys: JSON.stringify ['is not checked']
 
         options.uri = options.uri.replace 'newdatabox', 'nodatabox'
 
@@ -147,7 +116,7 @@ describe 'SSH keys:', ->
 
       it 'returns an error', (done) ->
           response.statusCode.should.equal 404
-          (_.isEqual (JSON.parse response.body), {"error":"Box not found"}).should.be.true
+          JSON.parse(response.body).error.should.include "not found"
           done()
 
     describe "when sshkey isn't present", ->
@@ -156,44 +125,12 @@ describe 'SSH keys:', ->
       before (done) ->
         options =
           uri: URL
-          form:
-            apikey: apikey
+          form: {}
 
         request.post options, (err, resp, body) ->
             response = resp
             done()
 
       it 'returns an error', ->
-        (_.isEqual (JSON.parse response.body), {"error":"SSH Key not specified"}).should.be.true
-
-    describe "when sshkey isn't valid", ->
-
-      # do we need this now?
-      it 'returns an error if completely invalid', (done) ->
-        invalid_sshkey = "foo bar baz"
-        options =
-          uri: URL
-          form:
-            apikey: apikey
-            sshkey: invalid_sshkey
-        request.post options, (err, resp, body) ->
-          (_.isEqual (JSON.parse resp.body),  {"error":"SSH Key format not valid"}).should.be.true
-          done()
-
-
-      it 'returns an error if no name', (done) ->
-        noname_sshkey =
-          """
-          ssh-dss AAAAB3NzaC1kc3MAAACBAPvBVeF9dMD7HFW5oGxd30JlfmhkAc8/Z+JIYmrZF1vTCpSyByYkDzey9DDR3Etob2YIEL/wn8/EQMCh8hNH96vQSzGqRXVYL37I89YbDWgkXLg9NcdJL7WwsnTioGJSCmc95OPXELREzoqqBL+N43JeVesreKBBJlX7haBdMdBVAAAAFQCVQ3RMcRY6OghLiqSL3sUHYuf8BwAAAIEAz58IebcwRIddJiVGZBpm/+wxErKe+iyz8HWvDc7qHEYTfds9Gpk3DaMjV+aPklataCA+dYY/XTo3NFhm0gt/ENs6FJjYPhKdByFv/iPny8T5C+Fhy1czgb3SdzFpHMK9ICTi/aUSXES/Z8aCsanBTWjlmgc1RgCCxoa+jLoei9AAAACAZYWhPRKTsqZlPncfLlEdFfn9oqHAqd3jVAHjc6f2UFLoPjTlALcdy+cSf/Hp/1Ga8WVBB8Twm0H6hz78EQO6AXf56XagBv7hd4pRetxe8E1OebwbRQkPzuAh4h/rTfK0uLp7koNZLUuH4wfFEkV4pxcoV4XM+9YjoalWKxJEiB4=
-          """
-
-        options =
-          uri: URL
-          form:
-            apikey: apikey
-            sshkey: noname_sshkey
-
-        request.post options, (err, resp, body) ->
-            (_.isEqual (JSON.parse resp.body),  {"error":"SSH Key has no name"}).should.be.true
-            done()
+        JSON.parse(response.body).error.should.include "not specified"
 
