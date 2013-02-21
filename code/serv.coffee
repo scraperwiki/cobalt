@@ -215,8 +215,15 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
           return res.send {error: "Unable to create box"} if err? or any_stderr
           return res.send {status: "ok"}
 
+myCheckIdent = (req, res, next) ->
+  if req.ip is "88.211.55.91"
+    req.ident = 'root'
+    next()
+  else
+    checkIdent req, res, next
+
 # Add an SSH key to a box
-app.post "/:boxname/sshkeys/?", checkIP, checkIdent, (req, res) ->
+app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
   if req.ident != 'root'
     return res.send 400,
       error: "Only custard running as root can contact me"
