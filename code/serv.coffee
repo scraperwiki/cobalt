@@ -93,7 +93,7 @@ check_api_key = (req, res, next) ->
         if not box?
           return res.send 404, {error: "Box not found"}
         req.box = box
-        if user._id.toString() != box.user.toString()
+        if user.shortName not in box.users
           return res.send 403, {error: "Unauthorised for this box"}
         return next()
     else
@@ -202,7 +202,8 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
       console.tick "checked box existence #{boxname}"
       if box
         return res.send {error: "Box already exists"}
-      new Box({user: user._id, name: boxname}).save (err) ->
+      # TODO: multiple users per box here? what about contexts?
+      new Box({users: [user.shortName], name: boxname}).save (err) ->
         console.tick "created database entity: box #{boxname}"
         if err
           console.log "Creating box: #{err} "
