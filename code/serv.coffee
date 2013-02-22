@@ -115,6 +115,7 @@ checkIP = (req, res, next) ->
     "192.168.176.192"
     "178.79.177.136"
     "192.168.186.120"
+    "88.211.55.91"
     ]
   if req.ip in allowed
     return next()
