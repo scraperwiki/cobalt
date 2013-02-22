@@ -1,3 +1,5 @@
+console.log "Disabled tests due to database merge, will be fixed soon"
+process.exit 1
 # box_upload.coffee
 
 child_process = require 'child_process'

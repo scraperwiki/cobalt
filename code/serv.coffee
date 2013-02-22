@@ -19,7 +19,6 @@ request = require 'request'
 checkIdent = require 'ident-express'
 
 Box = require 'models/box'
-SSHKey = require 'models/ssh_key'
 User = require 'models/user'
 
 app = express()

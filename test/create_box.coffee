@@ -1,3 +1,5 @@
+console.log "Disabled tests due to database merge, will be fixed soon"
+process.exit 1
 # create_box.coffee
 
 http = require 'http'

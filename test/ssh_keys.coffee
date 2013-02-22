@@ -18,10 +18,6 @@ _ = require 'underscore'
 # So that it appears in require.cache which we stub.
 require 'ident-express'
 
-User = require 'models/user'
-Box = require 'models/box'
-SSHKey = require 'models/ssh_key'
-
 nocks = require '../test/nocks'
 
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
