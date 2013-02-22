@@ -4,11 +4,8 @@ Schema = mongoose.Schema
 
 userSchema = new Schema
   apikey: {type: String, unique: true}
-  shortname: {type: String, unique: true}
+  shortName: {type: String, unique: true}
   created: {type: Date, default: Date.now}
-
-  # XXX these fields can be removed next
-  isstaff: Boolean
 
 userSchema.methods.objectify = ->
   result = @toObject()

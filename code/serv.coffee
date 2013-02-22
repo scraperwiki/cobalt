@@ -38,7 +38,7 @@ app.configure 'production', ->
   app.use express.logger()
   app.use express.errorHandler()
 
-mongoose.connect process.env['COBALT_DB']
+mongoose.connect process.env['CU_DB']
 
 server_hostname = ''
 root_url = ''
