@@ -61,22 +61,6 @@ describe 'Integration testing', ->
         resp.should.have.status 200
         done()
 
-    it 'ScraperWiki staff can create a user', (done) ->
-      should.exist staff_api_key
-      newuser = fresh_username()
-      options =
-        uri: "#{baseurl}/#{newuser}"
-        form:
-          apikey: staff_api_key
-      request.post options, (err, resp, body) ->
-        should.not.exist err
-        resp.statusCode.should.match /^2/
-        json = JSON.parse body
-        newuser.should.equal json.shortname
-        should.exist json.apikey
-        newapikey = json.apikey
-        done()
-
     it 'The new user can create a box', (done) ->
       myfirstbox = String(Math.random()).replace('0.','')
       options =
@@ -115,17 +99,6 @@ describe 'Integration testing', ->
         uri: "http://#{host}/box/#{boxname}"
         form:
           apikey: cobalt_api_key
-      request.post options, (err, resp, body) ->
-        should.not.exist err
-        resp.statusCode.should.match /^2/
-        done()
-
-    it 'I can add an ssh key', (done) ->
-      options =
-        uri: "http://#{host}/#{boxname}/sshkeys"
-        form:
-          apikey: cobalt_api_key
-          sshkey: fs.readFileSync sshkey_pub_path, "ascii"
       request.post options, (err, resp, body) ->
         should.not.exist err
         resp.statusCode.should.match /^2/

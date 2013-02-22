@@ -21,7 +21,6 @@ _ = require 'underscore'
 
 User = require 'models/user'
 Box = require 'models/box'
-SSHKey = require 'models/ssh_key'
 
 nocks = require '../test/nocks'
 

@@ -163,28 +163,6 @@ app.post "/:boxname/exec/?", check_api_key, (req, res) ->
   req.on 'end', -> su.kill()
   req.on 'close', -> su.kill()
 
-# Create a new profile - staff only
-# Don't want to check_api_key because this includes its own staff check
-app.post "/:profile/?", (req, res) ->
-  console.tick "got request create profile #{req.params.profile}"
-  # :todo: POST to existing profile should be an edit, and we should check
-  # the profile's apikey.
-  # What we actually do is only allow creation, using a staff apikey.
-  User.findOne {apikey: req.body.apikey}, (err, user) ->
-    if not user?.isstaff
-      return res.send { error: "Not authorised to create new profile" }, 403
-    else
-      # :todo: Extract more profile details from query params here.
-      new User(
-        shortname: req.params.profile
-        apikey: req.body.newApikey or fresh_apikey()
-      ).save (err) ->
-        console.log err
-        User.findOne {shortname: req.params.profile}, (err, user) ->
-          userobj = user.objectify()
-          # 201 Created, RFC2616
-          return res.json userobj, 201
-
 # Create a box.
 # Calling the parameter "newboxname" avoids the check in check_api_key that the
 # box has to exist.  Since we're creating a box, it doesn't have to exist.
