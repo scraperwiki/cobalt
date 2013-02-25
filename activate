@@ -24,6 +24,26 @@ deactivate () {
     unset -f deactivate
 }
 
+mocha () {
+    # Clean DB out and load fixtures
+    coffee cleaner.coffee
+    #mongofixtures cu-test fixtures.js
+    # Consider pushing to external program.
+    eval last=\${$#}
+
+    if [ "$#" = "0" ]
+    then
+        env mocha ${@:1:$#-1} $(find test -name '*.coffee' | sort)
+    else
+        if [ -d "$last" ]
+        then
+            env mocha ${@:1:$#-1} $(find "$last" -name '*.coffee' | sort)
+        else
+            env mocha $@
+        fi
+    fi
+}
+
 s=../swops-secret/keys.sh
 test -e "$s" && . "$s"
 true

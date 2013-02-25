@@ -19,6 +19,8 @@
     "should": ">0",
     "sinon": ">0",
     "nock": ">0",
-    "form-data": "~0.0.6"
+    "form-data": "~0.0.6",
+    "database-cleaner": "~0.7.0",
+    "mongodb": "~1.2.13"
   }
 }

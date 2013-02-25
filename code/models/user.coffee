@@ -4,7 +4,8 @@ Schema = mongoose.Schema
 
 userSchema = new Schema
   apikey: {type: String, unique: true}
-  shortName: {type: String, unique: true}
+  shortname: String
+  shortName: String
   created: {type: Date, default: Date.now}
 
 userSchema.methods.objectify = ->

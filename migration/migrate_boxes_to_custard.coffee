@@ -27,7 +27,6 @@ getUserFromBox = (box, cb) ->
   cb() unless box?
   CobaltUser.findOne {_id: box.user}, (err, user) ->
     console.log err if err?
-    #console.log "#{box?.name} #{user?.shortname}"
     if box?.name? and user?.shortname
       CustardUser.findOne {shortName: user.shortname}, (err, cusUser) ->
         if cusUser?
@@ -39,7 +38,7 @@ getUserFromBox = (box, cb) ->
             console.log "ERROR: #{err}" if err?
             return cb()
         else
-          console.log "ERROR: #{user.shortname} not found in custard"
+          console.log "INFO: #{user.shortname} not found in custard for #{box.name}"
     return cb()
 
 CobaltBox.find {}, (err, boxes) ->

@@ -1,5 +1,3 @@
-console.log "Disabled tests due to database merge, will be fixed soon"
-process.exit 1
 # create_box.coffee
 
 http = require 'http'
@@ -7,7 +5,6 @@ http = require 'http'
 # https://github.com/mikeal/request
 request = require 'request'
 should = require 'should'
-nock   = require 'nock'
 sinon  = require 'sinon'
 _ = require 'underscore'
 mongoose = require 'mongoose'
@@ -15,16 +12,11 @@ mongoose = require 'mongoose'
 User = require 'models/user'
 Box = require 'models/box'
 
-nocks = require '../test/nocks'
-
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 baseurl = 'http://127.0.0.1:3000'
 
 describe 'Creating a box:', ->
   apikey = String(Math.random()).replace('0.', '')
-
-  after ->
-    nock.cleanAll()
 
   describe '( POST /<boxname> )', ->
     server = null
@@ -39,7 +31,11 @@ describe 'Creating a box:', ->
 
       User.collection.drop ->
         Box.collection.drop ->
-          new User({apikey: apikey, shortname: 'kiteorg'}).save done
+          new User({apikey: apikey, shortName: 'kiteorg'}).save done
+
+    after ->
+      console.tick.restore()
+      server.unix_user_add.restore()
 
     it 'gives an error when creating a databox without a key', (done) ->
       u = "#{baseurl}/box/#{newboxname}"
@@ -58,8 +54,8 @@ describe 'Creating a box:', ->
             apikey: apikey
 
         request.post options, (err, resp, body) ->
-            response = resp
-            done()
+          response = resp
+          done()
 
       it "doesn't return an error", ->
         (_.isEqual (JSON.parse response.body), {status:"ok"}).should.be.true
@@ -96,8 +92,8 @@ describe 'Creating a box:', ->
             apikey: apikey
 
         request.post options, (err, resp, body) ->
-            response = resp
-            done()
+          response = resp
+          done()
 
       it "returns an error", ->
         response.statusCode.should.equal 404
@@ -114,4 +110,3 @@ describe 'Creating a box:', ->
           resp.statusCode.should.equal 403
           (_.isEqual (JSON.parse resp.body), {'error':'Unauthorised'}).should.be.true
           done()
-

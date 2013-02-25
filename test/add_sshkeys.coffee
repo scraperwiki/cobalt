@@ -4,8 +4,6 @@ child_process = require 'child_process'
 fs     = require 'fs'
 http = require 'http'
 
-# https://github.com/flatiron/nock
-nock   = require 'nock'
 # https://github.com/mikeal/request
 request = require 'request'
 # https://github.com/visionmedia/should.js/
@@ -18,7 +16,6 @@ _ = require 'underscore'
 # So that it appears in require.cache which we stub.
 require 'ident-express'
 
-nocks = require '../test/nocks'
 
 httpopts = {host:'127.0.0.1', port:3000, path:'/'}
 BASE_URL = 'http://127.0.0.1:3000'
@@ -33,10 +30,7 @@ checkIdentFake = (req, res, next) ->
   req.ident = 'root'
   next()
 
-describe 'SSH keys:', ->
-  after ->
-    nock.cleanAll()
-
+describe 'Add SSH keys:', ->
   before ->
     @checkIdentStub = sinon.stub require.cache[require.resolve 'ident-express'],
       'exports',
@@ -49,7 +43,7 @@ describe 'SSH keys:', ->
     chmod_stub = null
     exists_stub = null
     URL = "#{BASE_URL}/newdatabox/sshkeys"
- 
+
     before (done) ->
       server = require 'serv'
       mongoose = require 'mongoose'
@@ -129,4 +123,3 @@ describe 'SSH keys:', ->
 
       it 'returns an error', ->
         JSON.parse(response.body).error.should.include "not specified"
-
