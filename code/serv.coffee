@@ -157,7 +157,7 @@ app.post "/:boxname/exec/?", check_api_key, (req, res) ->
     res.write data
   su.stderr.on 'data', (data) ->
     res.write data
-  su.on 'exit', (code) ->
+  su.on 'close', (code) ->
     res.end()
 
   req.on 'end', -> su.kill()
