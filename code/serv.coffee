@@ -177,22 +177,12 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     console.tick "found user (again) #{boxname}"
     return res.send 404, {error: "User not found" } unless user?
-    Box.findOne {name: boxname}, (err, box) ->
-      console.tick "checked box existence #{boxname}"
-      if box
-        return res.send {error: "Box already exists"}
-      # TODO: multiple users per box here? what about contexts?
-      new Box({users: [user.shortName], name: boxname}).save (err) ->
-        console.tick "created database entity: box #{boxname}"
-        if err
-          console.log "Creating box: #{err} "
-          return res.send 404, {error: "Unknown error"}
-        exports.unix_user_add boxname, (err, stdout, stderr) ->
-          console.tick "added unix user #{boxname}"
-          any_stderr = stderr is not ''
-          console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
-          return res.send {error: "Unable to create box"} if err? or any_stderr
-          return res.send {status: "ok"}
+    exports.unix_user_add boxname, (err, stdout, stderr) ->
+      console.tick "added unix user #{boxname}"
+      any_stderr = stderr is not ''
+      console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
+      return res.send {error: "Unable to create box"} if err? or any_stderr
+      return res.send {status: "ok"}
 
 myCheckIdent = (req, res, next) ->
   if req.ip is "88.211.55.91"
@@ -240,13 +230,13 @@ app.post "/:boxname/file/?", check_api_key, (req, res) ->
   file = req.files.file
   if ! file
     return res.send 400, { error: "no file" }
-  
+
   # Remove all characters apart from a few select safe ones.
   file.name = file.name.replace /[^.a-zA-Z0-9_+-]/g, ''
   child_process.exec "mv #{file.path} #{dir}/#{file.name}", ->
     child_process.exec "chown #{boxname}: #{dir}/#{file.name}", ->
       next = req.body.next || "/"
-      # TODO: there must be a better way of doing this, 
+      # TODO: there must be a better way of doing this,
       # perhaps easyXDM with file upload + metadata calls
       # If there's a # in the URL, read the JSON object out
       if next.indexOf('#') > -1
