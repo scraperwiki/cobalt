@@ -91,6 +91,8 @@ check_api_key = (req, res, next) ->
     next()
 
 check_box = (req, res, next) ->
+  if process.env.CO_AVOID_BOX_CHECK?
+    next()
   if req.params.boxname?
     Box.findOne {name:req.params.boxname}, (err, box) ->
       if not box?
