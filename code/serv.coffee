@@ -88,16 +88,21 @@ check_api_key = (req, res, next) ->
     if not authorised
       return res.send 403, {error: "Unauthorised"}
     req.user = user
-    if req.params.boxname?
-      Box.findOne {name:req.params.boxname}, (err, box) ->
-        if not box?
-          return res.send 404, {error: "Box not found"}
-        req.box = box
-        if user.shortName not in box.users
-          return res.send 403, {error: "Unauthorised for this box"}
-        return next()
-    else
+    next()
+
+check_box = (req, res, next) ->
+  if req.params.boxname?
+    Box.findOne {name:req.params.boxname}, (err, box) ->
+      if not box?
+        return res.send 404, {error: "Box not found"}
+      req.box = box
+      if req?.user?.shortName not in box.users
+        return res.send 403, {error: "Unauthorised for this box"}
       return next()
+  else
+    return next()
+
+check_api_and_box = [check_api_key, check_box]
 
 # Middleware that checks the IP address of the connecting
 # partner (which we expect to be custard).
@@ -148,7 +153,7 @@ console.tick = (stuff...) ->
   console.log.apply console, [(new Date()).toISOString()].concat(stuff)
 
 # Exec endpoint - see wiki for note about security
-app.post "/:boxname/exec/?", check_api_key, (req, res) ->
+app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
   console.tick "got POST exec #{req.params.boxname} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
   cmd = req.body.cmd
@@ -164,8 +169,8 @@ app.post "/:boxname/exec/?", check_api_key, (req, res) ->
   req.on 'close', -> su.kill()
 
 # Create a box.
-# Calling the parameter "newboxname" avoids the check in check_api_key that the
-# box has to exist.  Since we're creating a box, it doesn't have to exist.
+# Since we're creating a box, it doesn't have to exist, so we
+# don't need to call check_box().
 app.post "/box/:newboxname/?", check_api_key, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
@@ -217,7 +222,7 @@ app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
       return res.send {"error": "Internal creation error"}
 
 # Add a file to a box
-app.post "/:boxname/file/?", check_api_key, (req, res) ->
+app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
   boxname = req.params.boxname
   dir = "/home/#{boxname}/incoming"
   existsSync = fs.existsSync || path.existsSync

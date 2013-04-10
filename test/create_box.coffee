@@ -65,21 +65,6 @@ describe 'Creating a box:', ->
         exec_stub.called.should.be.true
         exec_stub.calledWith newboxname
 
-      it 'adds the box to the database', (done) ->
-        Box.findOne {name: newboxname}, (err, box) ->
-          should.exist box
-          done()
-
-      it 'errors when the box already exists', (done) ->
-        options =
-          uri: "#{baseurl}/box/#{newboxname}"
-          form:
-            apikey: apikey
-
-        request.post options, (err, resp, body) ->
-          (_.isEqual (JSON.parse resp.body), {error:"Box already exists"}).should.be.true
-          done()
-
 
     describe 'when we use silly characters in a box name', ->
       response = null
