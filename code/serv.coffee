@@ -189,7 +189,7 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
       any_stderr = stderr is not ''
       console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
       return res.send {error: "Unable to create box"} if err? or any_stderr
-      return res.send {status: "ok"}
+      return res.send stdout
 
 myCheckIdent = (req, res, next) ->
   if req.ip is "88.211.55.91"

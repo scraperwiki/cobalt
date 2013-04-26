@@ -66,9 +66,11 @@ furnish_as_user() {
 
   # create public http directory
   mkdir http
-  
+
   # create incoming directory for file uploads
   mkdir incoming
+
+  cat box.json
 
 }
 
@@ -82,4 +84,3 @@ update_jail() {
 
   # User in the jail
 }
-
