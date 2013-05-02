@@ -270,8 +270,7 @@ exports.unix_user_add = (user_name, callback) ->
         cd /opt/cobalt &&
         . ./code/box_lib.sh &&
         create_user #{user_name} &&
-        create_user_directories #{user_name} &&
-        furnish_box #{user_name}
+        create_user_directories #{user_name}
         """
   # insecure - sanitise user_name
   exec cmd, callback
