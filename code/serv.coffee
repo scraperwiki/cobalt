@@ -142,7 +142,7 @@ fresh_apikey = ->
 
 docs = (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.send "See https://x.scraperwiki.com/docs", 200
+  res.send "See https://beta.scraperwiki.com/help/developer/", 200
 
 app.get "/", docs
 app.get "/:boxname/?", docs
