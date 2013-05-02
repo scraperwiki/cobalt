@@ -271,6 +271,7 @@ exports.unix_user_add = (user_name, callback) ->
         . ./code/box_lib.sh &&
         create_user #{user_name} &&
         create_user_directories #{user_name}
+        sh ./code/templates/box.json.template
         """
   # insecure - sanitise user_name
   exec cmd, callback
