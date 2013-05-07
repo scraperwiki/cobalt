@@ -21,6 +21,11 @@ checkIdent = require 'ident-express'
 Box = require 'models/box'
 User = require 'models/user'
 
+if process.env.NODETIME_KEY?
+  require('nodetime').profile
+    accountKey: process.env.NODETIME_KEY
+    appName: process.env.CO_NODETIME_APP
+
 app = express()
 
 # Trust the headers from nginx and change req.ip to the real IP
