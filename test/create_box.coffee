@@ -27,7 +27,10 @@ describe 'Creating a box:', ->
       server = require 'serv'
       sinon.stub console, 'tick'
       exec_stub = sinon.stub server, 'unix_user_add', (_a, callback) ->
-        callback null, null, null
+        obj =
+          publish_token: '32424dfsdr3'
+          database: 'scraperwiki.sqlite'
+        callback null, JSON.stringify(obj), null
 
       User.collection.drop ->
         Box.collection.drop ->
@@ -58,8 +61,10 @@ describe 'Creating a box:', ->
           done()
 
       it "doesn't return an error", ->
-        (_.isEqual (JSON.parse response.body), {status:"ok"}).should.be.true
         response.statusCode.should.equal 200
+
+      it 'returns valid JSON', ->
+        JSON.parse response.body
 
       it 'calls the useradd command with appropriate args', ->
         exec_stub.called.should.be.true

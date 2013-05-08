@@ -48,18 +48,15 @@ describe 'Add SSH keys:', ->
       server = require 'serv'
       mongoose = require 'mongoose'
 
-      write_stub = sinon.stub(fs, 'writeFileSync')
-        .withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
-      chmod_stub = sinon.stub(fs, 'chmodSync')
-        .withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys", (parseInt '0600', 8)
-      chown_stub = sinon.stub(child_process, 'exec')
-        .withArgs("chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys").callsArg(1)
+      write_stub = sinon.stub(fs, 'writeFile').callsArg(3)
+      chmod_stub = sinon.stub(fs, 'chmod').callsArg(2)
+      chown_stub = sinon.stub(child_process, 'exec').callsArg(1)
       exists_stub = sinon.stub fs, 'exists', existsFake
       done()
 
     after ->
-      fs.writeFileSync.restore()
-      fs.chmodSync.restore()
+      fs.writeFile.restore()
+      fs.chmod.restore()
       child_process.exec.restore()
       fs.exists.restore()
 
@@ -72,7 +69,6 @@ describe 'Add SSH keys:', ->
         """
 
       before (done) ->
-
         options =
           uri: URL
           form:
@@ -87,8 +83,8 @@ describe 'Add SSH keys:', ->
 
       describe 'when keys are present', ->
         it "overwrites the box's authorized_keys file with all ssh keys", ->
-          write_stub.calledOnce.should.be.true
-          chmod_stub.calledOnce.should.be.true
+          write_stub.calledWith '/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys'
+          chmod_stub.calledWith '/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys'
 
     describe "when the box doesn't exist", ->
       response = null

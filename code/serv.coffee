@@ -6,9 +6,6 @@
 {exec}  = require 'child_process'
 fs      = require 'fs'
 path    = require 'path'
-# Avoids warning.  Remove when we definitely use a node version with
-# the "modern" fs.existsSync.
-existsSync = fs.existsSync || path.existsSync
 child_process = require 'child_process'
 os      = require 'os'
 
@@ -221,52 +218,50 @@ app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
     if not exists
       return res.send 404, error: "Box #{boxname} not found"
     keys = JSON.parse req.body.keys
-    fs.writeFileSync keysPath, keys.join '\n', 'utf8'
-    # Note: octal.  This is deliberate.
-    fs.chmodSync keysPath, 0o600
-    child_process.exec "chown #{boxname}: #{keysPath}", (err, stdout, stderr) -> # insecure
-      return res.send {"status": "ok"} unless err
-      console.log "ERROR: #{err}, stderr: #{stderr}"
-      return res.send {"error": "Internal creation error"}
+    fs.writeFile keysPath, keys.join('\n'), encoding: 'utf8', (err) ->
+      # Note: octal.  This is deliberate.
+      fs.chmod keysPath, 0o600, (err) ->
+        child_process.exec "chown #{boxname}: #{keysPath}", (err, stdout, stderr) -> # insecure
+          return res.send {"status": "ok"} unless err
+          console.log "ERROR: #{err}, stderr: #{stderr}"
+          return res.send {"error": "Internal creation error"}
 
 # Add a file to a box
 app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
   boxname = req.params.boxname
   dir = "/home/#{boxname}/incoming"
-  existsSync = fs.existsSync || path.existsSync
-  if ! existsSync dir
-    console.log "no #{dir}"
-    return res.send 404, { error: "no ~/incoming directory" }
-  if ! fs.statSync(dir).isDirectory()
-    console.log "not dir #{dir}"
-    return res.send 404, { error: "~/incoming is not a directory" }
-  file = req.files.file
-  if ! file
-    return res.send 400, { error: "no file" }
+  fs.stat dir, (err, stat) ->
+    if not stat?.isDirectory?()
+      console.log "no dir #{dir}"
+      return res.send 404, { error: "~/incoming is not a directory or doesn't exist" }
 
-  # Remove all characters apart from a few select safe ones.
-  file.name = file.name.replace /[^.a-zA-Z0-9_+-]/g, ''
-  child_process.exec "mv #{file.path} #{dir}/#{file.name}", ->
-    child_process.exec "chown #{boxname}: #{dir}/#{file.name}", ->
-      next = req.body.next || "/"
-      # TODO: there must be a better way of doing this,
-      # perhaps easyXDM with file upload + metadata calls
-      # If there's a # in the URL, read the JSON object out
-      if next.indexOf('#') > -1
-        text = decodeURIComponent(next)
-        obj = JSON.parse text.substr(text.indexOf '{')
-        obj.filePath = file.name
-        json = encodeURIComponent JSON.stringify(obj)
-        next = "#{next.split('#')[0]}##{json}"
-      else
-        next = "#{next}##{dir}/#{file.name}"
-      return res.redirect 301, next
+    file = req.files.file
+    if not file
+      return res.send 400, { error: "no file" }
 
-if existsSync(port)
+    # Remove all characters apart from a few select safe ones.
+    file.name = file.name.replace /[^.a-zA-Z0-9_+-]/g, ''
+    child_process.exec "mv #{file.path} #{dir}/#{file.name}", ->
+      child_process.exec "chown #{boxname}: #{dir}/#{file.name}", ->
+        next = req.body.next || "/"
+        # TODO: there must be a better way of doing this,
+        # perhaps easyXDM with file upload + metadata calls
+        # If there's a # in the URL, read the JSON object out
+        if next.indexOf('#') > -1
+          text = decodeURIComponent(next)
+          obj = JSON.parse text.substr(text.indexOf '{')
+          obj.filePath = file.name
+          json = encodeURIComponent JSON.stringify(obj)
+          next = "#{next.split('#')[0]}##{json}"
+        else
+          next = "#{next}##{dir}/#{file.name}"
+        return res.redirect 301, next
+
+if fs.existsSync(port)
   fs.unlinkSync port
 
 app.listen port, ->
-  if existsSync(port)
+  if fs.existsSync(port)
     fs.chmodSync port, 0o600
     child_process.exec "chown www-data #{port}"
 

@@ -67,13 +67,12 @@ describe 'Upload file to box', ->
     describe 'when the API key is valid', ->
       before ->
         @exec_stub = sinon.stub(child_process, 'exec').callsArg(1)
-        sinon.stub(fs, 'existsSync').returns(true)
-        sinon.stub(fs, 'statSync').returns(isDirectory: -> true)
+        sinon.stub fs, 'stat', (a_, cb) ->
+          cb null, isDirectory: -> true
 
       after ->
         child_process.exec.restore()
-        fs.existsSync.restore()
-        fs.statSync.restore()
+        fs.stat.restore()
 
       before (done) ->
         form = new FormData()
