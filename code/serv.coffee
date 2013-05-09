@@ -154,6 +154,7 @@ docs = (req, res) ->
   res.header('Content-Type', 'application/json')
   res.send "See https://beta.scraperwiki.com/help/developer/", 200
 
+app.all '*', nodetimeLog
 app.get "/", docs
 app.get "/:boxname/?", docs
 
@@ -183,7 +184,7 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
 # Create a box.
 # Since we're creating a box, it doesn't have to exist, so we
 # don't need to call check_box().
-app.post "/box/:newboxname/?", nodetimeLog, check_api_key, (req, res) ->
+app.post "/box/:newboxname/?", check_api_key, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
   boxname = req.params.newboxname
