@@ -18,11 +18,10 @@ checkIdent = require 'ident-express'
 Box = require 'models/box'
 User = require 'models/user'
 
-if process.env.NODETIME_KEY
-  require('nodetime').profile
-    accountKey: process.env.NODETIME_KEY
-    appName: "#{process.env.CO_NODETIME_APP} #{require('os').hostname()}"
-
+nodetime = require('nodetime')
+nodetime.profile
+  accountKey: process.env.NODETIME_KEY
+  appName: "#{process.env.CO_NODETIME_APP} #{require('os').hostname()}"
 app = express()
 
 # Trust the headers from nginx and change req.ip to the real IP
@@ -52,6 +51,14 @@ app.all "*", (req, res, next) ->
 
 # Templating language
 app.set('view engine', 'ejs')
+
+nodetimeLog = (req, res, next) ->
+  res.nodetimePromise = nodetime.time 'Cobalt request ', req.url, req
+  oldSend = res.send
+  res.send = (args... ) ->
+    res.nodetimePromise.end()
+    oldSend.apply res, args
+  next()
 
 parse_settings = (text) ->
   try
@@ -176,7 +183,7 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
 # Create a box.
 # Since we're creating a box, it doesn't have to exist, so we
 # don't need to call check_box().
-app.post "/box/:newboxname/?", check_api_key, (req, res) ->
+app.post "/box/:newboxname/?", nodetimeLog, check_api_key, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
   boxname = req.params.newboxname
