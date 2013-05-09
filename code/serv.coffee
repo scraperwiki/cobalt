@@ -267,7 +267,7 @@ app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
 if fs.existsSync(port)
   fs.unlinkSync port
 
-app.listen port, ->
+server = app.listen port, ->
   if fs.existsSync(port)
     fs.chmodSync port, 0o600
     child_process.exec "chown www-data #{port}"
@@ -284,3 +284,15 @@ exports.unix_user_add = (user_name, callback) ->
         """
   # insecure - sanitise user_name
   exec cmd, callback
+
+# Wait for all connections to finish before quitting
+process.on 'SIGTERM', ->
+  console.log "Gracefully stopping..."
+  server.close ->
+    console.log "All connections finished, exiting"
+    process.exit()
+
+  setTimeout ->
+    console.error "Could not close connections in time, forcefully shutting down"
+    process.exit 1
+  , 30*1000
