@@ -3,6 +3,11 @@
 # serv.coffee
 # http server for cobalt.
 
+nodetime = require 'nodetime'
+nodetime.profile
+  accountKey: process.env.NODETIME_KEY
+  appName: "#{process.env.CO_NODETIME_APP} #{require('os').hostname()}"
+
 {exec}  = require 'child_process'
 fs      = require 'fs'
 path    = require 'path'
@@ -19,10 +24,6 @@ _ = require 'underscore'
 Box = require 'models/box'
 User = require 'models/user'
 
-nodetime = require('nodetime')
-nodetime.profile
-  accountKey: process.env.NODETIME_KEY
-  appName: "#{process.env.CO_NODETIME_APP} #{require('os').hostname()}"
 app = express()
 
 # TODO: move into npm module
