@@ -33,7 +33,7 @@ nodetimeLog = (req, res, next) ->
         return true
   if matched?
     name = "#{req.method} #{matched.path}"
-    res.nodetimePromise = nodetime.time 'Custard request ', name, req.url
+    res.nodetimePromise = nodetime.time 'Cobalt request ', name, req.url
     oldSend = res.send
     res.send = (args... ) ->
       res.nodetimePromise.end()
