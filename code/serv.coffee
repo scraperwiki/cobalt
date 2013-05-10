@@ -24,11 +24,27 @@ nodetime.profile
   appName: "#{process.env.CO_NODETIME_APP} #{require('os').hostname()}"
 app = express()
 
+# TODO: move into npm module
+nodetimeLog = (req, res, next) ->
+  matched = _.find app.routes[req.method.toLowerCase()], (route) ->
+    if route.regexp.test req.url
+      if route.path isnt '*'
+        return true
+  if matched?
+    name = "#{req.method} #{matched.path}"
+    res.nodetimePromise = nodetime.time 'Custard request ', name, req.url
+    oldSend = res.send
+    res.send = (args... ) ->
+      res.nodetimePromise.end()
+      oldSend.apply res, args
+  return next()
+
 # Trust the headers from nginx and change req.ip to the real IP
 # of the connecting dude.
 app.set "trust proxy", true
 
 app.use express.bodyParser()
+app.use nodetimeLog
 
 app.configure 'staging', ->
   app.use express.logger()
@@ -52,13 +68,6 @@ app.all "*", (req, res, next) ->
 # Templating language
 app.set('view engine', 'ejs')
 
-nodetimeLog = (req, res, next) ->
-  res.nodetimePromise = nodetime.time 'Cobalt request ', req.url, req
-  oldSend = res.send
-  res.send = (args... ) ->
-    res.nodetimePromise.end()
-    oldSend.apply res, args
-  next()
 
 parse_settings = (text) ->
   try
@@ -154,7 +163,6 @@ docs = (req, res) ->
   res.header('Content-Type', 'application/json')
   res.send "See https://beta.scraperwiki.com/help/developer/", 200
 
-app.all '*', nodetimeLog
 app.get "/", docs
 app.get "/:boxname/?", docs
 
