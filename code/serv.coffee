@@ -14,6 +14,7 @@ express = require 'express'
 mongoose = require 'mongoose'
 request = require 'request'
 checkIdent = require 'ident-express'
+_ = require 'underscore'
 
 Box = require 'models/box'
 User = require 'models/user'

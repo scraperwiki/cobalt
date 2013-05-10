@@ -8,7 +8,7 @@
     "mongoose": "~2",
     "request": ">0",
     "ejs": ">0",
-    "underscore": ">0",
+    "underscore": "~1.4.4",
     "async": "~0.1.22",
     "bcrypt": "~0.7.3",
     "nibbler": "git://github.com/mattrobenolt/node_nibbler.git",
