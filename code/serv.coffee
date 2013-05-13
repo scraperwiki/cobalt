@@ -56,7 +56,11 @@ app.configure 'production', ->
   app.use express.logger()
   app.use express.errorHandler()
 
-mongoose.connect process.env['CU_DB']
+mongoose.connect process.env.CU_DB,
+  server:
+    auto_reconnect: true
+    socketOptions:
+      keepAlive: 1
 
 server_hostname = ''
 root_url = ''
