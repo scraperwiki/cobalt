@@ -130,13 +130,13 @@ check_box = (req, res, next) ->
 
 check_api_and_box = [check_api_key, check_box]
 
-# Middleware that checks the IP address of the connecting
-# partner (which we expect to be custard).
-checkIP = (req, res, next) ->
-  # Relies on app.set "trust proxy", true in order to get
-  # sensible results.
-  # :todo: get these from file or environment variable.
-  allowed = [
+# Read optional list of allowed IPs from file.
+allowedIP = []
+if fs.existsSync("/etc/cobalt/allowed-ip")
+  allowedIP = fs.readFileSync("/etc/cobalt/allowed-ip")
+  allowedIP = allowedIP.replace /\n$/, ''
+  allowedIP = allowedIP.split "\n"
+allowedIP = allowedIP.concat [
     "127.0.0.1"
     "178.79.181.194"
     "192.168.129.215"
@@ -149,7 +149,13 @@ checkIP = (req, res, next) ->
     "88.211.55.91"
     "176.58.127.147"
     ]
-  if req.ip in allowed
+# Middleware that checks the IP address of the connecting
+# partner (which we expect to be custard).
+checkIP = (req, res, next) ->
+  # Relies on app.set "trust proxy", true in order to get
+  # sensible results.
+  # :todo: get these from file or environment variable.
+  if req.ip in allowedIP
     return next()
   res.send 403, {error: "IP #{req.ip} not allowed"}
 
