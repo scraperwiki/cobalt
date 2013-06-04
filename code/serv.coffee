@@ -240,7 +240,7 @@ app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
   unless req.body.keys? then return res.send { error: "SSH keys not specified" }, 400
 
   boxname = req.params.boxname
-  dir = "/opt/cobalt/etc/sshkeys/#{boxname}"
+  dir = "/#{process.env.CO_STORAGE_DIR}/sshkeys/#{boxname}"
   keysPath = "#{dir}/authorized_keys"
   fs.exists dir, (exists) ->
     if not exists

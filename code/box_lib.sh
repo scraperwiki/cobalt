@@ -13,11 +13,11 @@ create_user() {
   shadow_row="${USERNAME}:x:15607:0:99999:7:::"
   (
     flock -w 2 9 || exit 99
-    { cat /etc/passwd ; echo "$passwd_row" ; } > /etc/passwd+
-    mv /etc/passwd+ /etc/passwd
-    { cat /etc/shadow ; echo "$shadow_row" ; } > /etc/shadow+
-    mv /etc/shadow+ /etc/shadow
-  ) 9>/etc/passwd.cobalt.lock
+    { cat ${CO_STORAGE_DIR}/etc/passwd ; echo "$passwd_row" ; } > ${CO_STORAGE_DIR}/etc/passwd+
+    mv ${CO_STORAGE_DIR}/etc/passwd+ ${CO_STORAGE_DIR}/etc/passwd
+    { cat ${CO_STORAGE_DIR}/etc/shadow ; echo "$shadow_row" ; } > ${CO_STORAGE_DIR}/etc/shadow+
+    mv ${CO_STORAGE_DIR}/etc/shadow+ ${CO_STORAGE_DIR}/etc/shadow
+   ) 9>${CO_STORAGE_DIR}/etc/passwd.cobalt.lock
 }
 
 delete_user() {
@@ -29,18 +29,18 @@ create_user_directories() {
   USERNAME="$1"
 
   # root
-  mkdir -p /home/"${USERNAME}"
+  mkdir -p ${CO_STORAGE_DIR}/home/"${USERNAME}"
 
   # jail
   mkdir -p "/jails/${USERNAME}"
 
   # Users owns her home.
-  chown -R "$USERNAME:" "/home/${USERNAME}"
+  chown -R "$USERNAME:" "${CO_STORAGE_DIR}/home/${USERNAME}"
 
   cp /etc/passwd /opt/basejail/etc/passwd-inflight
   mv /opt/basejail/etc/passwd-inflight /opt/basejail/etc/passwd
 
-  mkdir -p "/opt/cobalt/etc/sshkeys/${USERNAME}"
+  mkdir -p "${CO_STORAGE_DIR}/sshkeys/${USERNAME}"
 }
 
 furnish_box() {
@@ -57,7 +57,7 @@ furnish_as_user() {
   TEMPLATES=/opt/cobalt/code/templates
 
   # Go home.  Note: We're not chrooted.
-  cd /home/"$BOXNAME"
+  cd ${CO_STORAGE_DIR}/home/"$BOXNAME"
 
   # box file
   # Slightly hairy shell, because the .json file cannot end in a
@@ -76,7 +76,7 @@ furnish_as_user() {
 
 delete_user_directories() {
   USERNAME="$1"
-  rm -R "/home/$USERNAME"
+  rm -R "${CO_STORAGE_DIR}/home/$USERNAME"
 }
 
 update_jail() {
