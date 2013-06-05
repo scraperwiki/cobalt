@@ -134,7 +134,7 @@ check_api_and_box = [check_api_key, check_box]
 allowedIP = []
 if fs.existsSync("/etc/cobalt/allowed-ip")
   allowedIP = fs.readFileSync("/etc/cobalt/allowed-ip")
-  allowedIP = allowedIP.replace /\n$/, ''
+  allowedIP = allowedIP.toString().replace /\n$/, ''
   allowedIP = allowedIP.split "\n"
 allowedIP = allowedIP.concat [
     "127.0.0.1"
