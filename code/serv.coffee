@@ -295,13 +295,14 @@ server = app.listen port, ->
 
 
 exports.unix_user_add = (user_name, callback) ->
+  homeDir = "#{process.env.CO_STORAGE_DIR}/home"
   cmd = """
         cd /opt/cobalt &&
         . ./code/box_lib.sh &&
         create_user #{user_name} &&
         create_user_directories #{user_name}
-        sh ./code/templates/box.json.template | tee /home/#{user_name}/box.json
-        chown #{user_name}:databox /home/#{user_name}/box.json
+        sh ./code/templates/box.json.template | tee #{homeDir}/#{user_name}/box.json
+        chown #{user_name}:databox #{homeDir}/#{user_name}/box.json
         """
   # insecure - sanitise user_name
   exec cmd, callback
