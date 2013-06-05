@@ -47,7 +47,7 @@ furnish_box() {
   # Just a wrapper really, switches to the user, then runs
   # another function.
   USERNAME="$1"
-  sudo -u "$USERNAME" sh -c ". ./code/box_lib.sh; furnish_as_user"
+  sudo -u "$USERNAME" sh -c "CO_STORAGE_DIR=${CO_STORAGE_DIR}; . ./code/box_lib.sh; furnish_as_user"
 }
 
 furnish_as_user() {
@@ -71,7 +71,6 @@ furnish_as_user() {
   mkdir incoming
 
   cat box.json
-
 }
 
 delete_user_directories() {
