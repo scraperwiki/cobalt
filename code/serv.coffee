@@ -262,7 +262,7 @@ app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
 # Add a file to a box
 app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
   boxname = req.params.boxname
-  dir = "/home/#{boxname}/incoming"
+  dir = "#{process.env.CO_STORAGE_DIR}/home/#{boxname}/incoming"
   fs.stat dir, (err, stat) ->
     if not stat?.isDirectory?()
       console.log "no dir #{dir}"
