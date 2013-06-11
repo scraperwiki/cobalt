@@ -204,7 +204,7 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
 # Create a box.
 # Since we're creating a box, it doesn't have to exist, so we
 # don't need to call check_box().
-app.post "/box/:newboxname/?", check_api_key, (req, res) ->
+app.post "/box/:newboxname/?", checkIP, myCheckIdent, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
   boxname = req.params.newboxname
@@ -212,6 +212,9 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
   if not re.test boxname
     return res.send 404,
       error: "Box name should match the regular expression #{String(re)}"
+  if req.ident != 'root'
+    return res.send 400,
+      error: 'Only Custard running as Root can contact me'
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     console.tick "found user (again) #{boxname}"
     return res.send 404, {error: "User not found" } unless user?
