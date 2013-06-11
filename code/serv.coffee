@@ -191,7 +191,9 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
   res.removeHeader 'Content-Type'
   cmd = req.body.cmd
   su = child_process.spawn "su", ["-", "-c", "#{cmd}", "#{req.params.boxname}"]
+  console.log data
   su.stdout.on 'data', (data) ->
+    console.log data
     res.write data
   su.stderr.on 'data', (data) ->
     res.write data
@@ -201,9 +203,18 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
   req.on 'end', -> su.kill()
   req.on 'close', -> su.kill()
 
+
+myCheckIdent = (req, res, next) ->
+  if req.ip is "88.211.55.91"
+    req.ident = 'root'
+    next()
+  else
+    checkIdent req, res, next
+
 # Create a box.
 # Since we're creating a box, it doesn't have to exist, so we
 # don't need to call check_box().
+
 app.post "/box/:newboxname/?", checkIP, myCheckIdent, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
@@ -215,22 +226,19 @@ app.post "/box/:newboxname/?", checkIP, myCheckIdent, (req, res) ->
   if req.ident != 'root'
     return res.send 400,
       error: 'Only Custard running as Root can contact me'
+  if not req.body.uid?
+    return res.send 400,
+      error: "Specify a UID"
+
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     console.tick "found user (again) #{boxname}"
     return res.send 404, {error: "User not found" } unless user?
-    exports.unix_user_add boxname, (err, stdout, stderr) ->
+    exports.unix_user_add boxname, req.body.uid, (err, stdout, stderr) ->
       console.tick "added unix user #{boxname}"
       any_stderr = stderr is not ''
       console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
       return res.send {error: "Unable to create box"} if err? or any_stderr
       return res.send stdout
-
-myCheckIdent = (req, res, next) ->
-  if req.ip is "88.211.55.91"
-    req.ident = 'root'
-    next()
-  else
-    checkIdent req, res, next
 
 # Add an SSH key to a box
 app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
@@ -260,7 +268,7 @@ app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
 # Add a file to a box
 app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
   boxname = req.params.boxname
-  dir = "/home/#{boxname}/incoming"
+  dir = "#{process.env.CO_STORAGE_DIR}/home/#{boxname}/incoming"
   fs.stat dir, (err, stat) ->
     if not stat?.isDirectory?()
       console.log "no dir #{dir}"
@@ -297,12 +305,12 @@ server = app.listen port, ->
     child_process.exec "chown www-data #{port}"
 
 
-exports.unix_user_add = (user_name, callback) ->
+exports.unix_user_add = (user_name, uid, callback) ->
   homeDir = "#{process.env.CO_STORAGE_DIR}/home"
   cmd = """
         cd /opt/cobalt &&
         . ./code/box_lib.sh &&
-        create_user #{user_name} &&
+        create_user #{user_name} #{uid} &&
         create_user_directories #{user_name}
         sh ./code/templates/box.json.template | tee #{homeDir}/#{user_name}/box.json
         chown #{user_name}:databox #{homeDir}/#{user_name}/box.json

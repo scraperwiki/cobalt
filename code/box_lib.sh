@@ -4,12 +4,11 @@
 
 create_user() {
   USERNAME="$1"
+  UID="$2"
 
   # Create the user
-  max_uid=$(awk -F: '{print $3}' /etc/passwd | sort -n | tail -1)
-  uid=$(($max_uid + 1))
   gid=$(awk -F: '/^databox:/{print $3}' /etc/group)
-  passwd_row="${USERNAME}:x:${uid}:${gid}::/home:/bin/bash"
+  passwd_row="${USERNAME}:x:${UID}:${gid}::/home:/bin/bash"
   shadow_row="${USERNAME}:x:15607:0:99999:7:::"
   (
     flock -w 2 9 || exit 99
