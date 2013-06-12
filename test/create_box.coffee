@@ -26,7 +26,7 @@ describe 'Creating a box:', ->
     before (done) ->
       server = require 'serv'
       sinon.stub console, 'tick'
-      exec_stub = sinon.stub server, 'unix_user_add', (_a, callback) ->
+      exec_stub = sinon.stub server, 'unix_user_add', (_a, _b, callback) ->
         obj =
           publish_token: '32424dfsdr3'
           database: 'scraperwiki.sqlite'
@@ -40,11 +40,22 @@ describe 'Creating a box:', ->
       console.tick.restore()
       server.unix_user_add.restore()
 
-    it 'gives an error when creating a databox without a key', (done) ->
-      u = "#{baseurl}/box/#{newboxname}"
-      request.post {url:u}, (err, resp, body) ->
+    it "gives an error when creating a databox without a key", (done) ->
+      options =
+        uri: "#{baseurl}/box/#{newboxname}"
+      request.post options, (err, resp, body) ->
         resp.statusCode.should.equal 403
         (_.isEqual (JSON.parse resp.body), {'error':'No API key supplied'}).should.be.true
+        done()
+    
+    it 'gives an error when creating a databox without a uid', (done) ->
+      options =
+        uri: "#{baseurl}/box/#{newboxname}"
+        form:
+          apikey: apikey
+      request.post options, (err, resp, body) ->
+        resp.statusCode.should.equal 400
+        (_.isEqual (JSON.parse resp.body), {'error':'Specify a UID'}).should.be.true
         done()
 
     describe 'when the apikey is valid', ->
@@ -55,6 +66,7 @@ describe 'Creating a box:', ->
           uri: "#{baseurl}/box/#{newboxname}"
           form:
             apikey: apikey
+            uid: 42
 
         request.post options, (err, resp, body) ->
           response = resp

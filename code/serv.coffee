@@ -205,7 +205,7 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
 
 
 myCheckIdent = (req, res, next) ->
-  if req.ip is "88.211.55.91"
+  if req.ip in ["88.211.55.91", "127.0.0.1"]
     req.ident = 'root'
     next()
   else
@@ -215,7 +215,7 @@ myCheckIdent = (req, res, next) ->
 # Since we're creating a box, it doesn't have to exist, so we
 # don't need to call check_box().
 
-app.post "/box/:newboxname/?", checkIP, myCheckIdent, (req, res) ->
+app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
   boxname = req.params.newboxname
@@ -224,7 +224,7 @@ app.post "/box/:newboxname/?", checkIP, myCheckIdent, (req, res) ->
     return res.send 404,
       error: "Box name should match the regular expression #{String(re)}"
   if req.ident != 'root'
-    return res.send 400,
+    return res.send 403
       error: 'Only Custard running as Root can contact me'
   if not req.body.uid?
     return res.send 400,
@@ -306,6 +306,7 @@ server = app.listen port, ->
 
 
 exports.unix_user_add = (user_name, uid, callback) ->
+  console.log "Zarino woz ere"
   homeDir = "#{process.env.CO_STORAGE_DIR}/home"
   cmd = """
         cd /opt/cobalt &&
@@ -316,6 +317,7 @@ exports.unix_user_add = (user_name, uid, callback) ->
         chown #{user_name}:databox #{homeDir}/#{user_name}/box.json
         """
   # insecure - sanitise user_name
+  console.log cmd
   exec cmd, callback
 
 # Wait for all connections to finish before quitting
