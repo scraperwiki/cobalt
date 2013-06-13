@@ -191,9 +191,7 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
   res.removeHeader 'Content-Type'
   cmd = req.body.cmd
   su = child_process.spawn "su", ["-", "-c", "#{cmd}", "#{req.params.boxname}"]
-  console.log data
   su.stdout.on 'data', (data) ->
-    console.log data
     res.write data
   su.stderr.on 'data', (data) ->
     res.write data
