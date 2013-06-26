@@ -130,13 +130,13 @@ check_box = (req, res, next) ->
 
 check_api_and_box = [check_api_key, check_box]
 
-# Middleware that checks the IP address of the connecting
-# partner (which we expect to be custard).
-checkIP = (req, res, next) ->
-  # Relies on app.set "trust proxy", true in order to get
-  # sensible results.
-  # :todo: get these from file or environment variable.
-  allowed = [
+# Read optional list of allowed IPs from file.
+allowedIP = []
+if fs.existsSync("/etc/cobalt/allowed-ip")
+  allowedIP = fs.readFileSync("/etc/cobalt/allowed-ip")
+  allowedIP = allowedIP.toString().replace /\n$/, ''
+  allowedIP = allowedIP.split "\n"
+allowedIP = allowedIP.concat [
     "127.0.0.1"
     "178.79.181.194"
     "192.168.129.215"
@@ -150,7 +150,13 @@ checkIP = (req, res, next) ->
     "176.58.127.147"
     "23.23.37.109"
     ]
-  if req.ip in allowed
+# Middleware that checks the IP address of the connecting
+# partner (which we expect to be custard).
+checkIP = (req, res, next) ->
+  # Relies on app.set "trust proxy", true in order to get
+  # sensible results.
+  # :todo: get these from file or environment variable.
+  if req.ip in allowedIP
     return next()
   res.send 403, {error: "IP #{req.ip} not allowed"}
 
@@ -196,10 +202,19 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
   req.on 'end', -> su.kill()
   req.on 'close', -> su.kill()
 
+
+myCheckIdent = (req, res, next) ->
+  if req.ip in ["88.211.55.91", "127.0.0.1"]
+    req.ident = 'root'
+    next()
+  else
+    checkIdent req, res, next
+
 # Create a box.
 # Since we're creating a box, it doesn't have to exist, so we
 # don't need to call check_box().
-app.post "/box/:newboxname/?", check_api_key, (req, res) ->
+
+app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
   boxname = req.params.newboxname
@@ -207,22 +222,22 @@ app.post "/box/:newboxname/?", check_api_key, (req, res) ->
   if not re.test boxname
     return res.send 404,
       error: "Box name should match the regular expression #{String(re)}"
+  if req.ident != 'root'
+    return res.send 403
+      error: 'Only Custard running as Root can contact me'
+  if not req.body.uid?
+    return res.send 400,
+      error: "Specify a UID"
+
   User.findOne {apikey: req.body.apikey}, (err, user) ->
     console.tick "found user (again) #{boxname}"
     return res.send 404, {error: "User not found" } unless user?
-    exports.unix_user_add boxname, (err, stdout, stderr) ->
+    exports.unix_user_add boxname, req.body.uid, (err, stdout, stderr) ->
       console.tick "added unix user #{boxname}"
       any_stderr = stderr is not ''
       console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
       return res.send {error: "Unable to create box"} if err? or any_stderr
       return res.send stdout
-
-myCheckIdent = (req, res, next) ->
-  if req.ip is "88.211.55.91"
-    req.ident = 'root'
-    next()
-  else
-    checkIdent req, res, next
 
 # Add an SSH key to a box
 app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
@@ -235,7 +250,7 @@ app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
   unless req.body.keys? then return res.send { error: "SSH keys not specified" }, 400
 
   boxname = req.params.boxname
-  dir = "/opt/cobalt/etc/sshkeys/#{boxname}"
+  dir = "/#{process.env.CO_STORAGE_DIR}/sshkeys/#{boxname}"
   keysPath = "#{dir}/authorized_keys"
   fs.exists dir, (exists) ->
     if not exists
@@ -252,7 +267,7 @@ app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
 # Add a file to a box
 app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
   boxname = req.params.boxname
-  dir = "/home/#{boxname}/incoming"
+  dir = "#{process.env.CO_STORAGE_DIR}/home/#{boxname}/incoming"
   fs.stat dir, (err, stat) ->
     if not stat?.isDirectory?()
       console.log "no dir #{dir}"
@@ -289,16 +304,19 @@ server = app.listen port, ->
     child_process.exec "chown www-data #{port}"
 
 
-exports.unix_user_add = (user_name, callback) ->
+exports.unix_user_add = (user_name, uid, callback) ->
+  console.log "Zarino woz ere"
+  homeDir = "#{process.env.CO_STORAGE_DIR}/home"
   cmd = """
         cd /opt/cobalt &&
         . ./code/box_lib.sh &&
-        create_user #{user_name} &&
+        create_user #{user_name} #{uid} &&
         create_user_directories #{user_name}
-        sh ./code/templates/box.json.template | tee /home/#{user_name}/box.json
-        chown #{user_name}:databox /home/#{user_name}/box.json
+        sh ./code/templates/box.json.template | tee #{homeDir}/#{user_name}/box.json
+        chown #{user_name}:databox #{homeDir}/#{user_name}/box.json
         """
   # insecure - sanitise user_name
+  console.log cmd
   exec cmd, callback
 
 # Wait for all connections to finish before quitting
