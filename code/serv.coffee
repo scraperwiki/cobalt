@@ -74,22 +74,6 @@ app.all "*", (req, res, next) ->
 # Templating language
 app.set('view engine', 'ejs')
 
-
-parse_settings = (text) ->
-  try
-    settings = JSON.parse text
-    return false unless typeof(settings) is 'object'
-    return settings
-  catch e
-    return false
-
-box_settings = (user_name, callback) ->
-  fs.readFile "/home/#{user_name}/box.json", 'utf-8', (err, data) ->
-    settings = parse_settings data
-    callback 'not json', {} if not settings
-    callback null, settings if not err?
-    callback err, {} if err?
-
 # Consult mongo database for specified profile.
 check_auth = (apikey, callback) ->
   User.findOne {apikey: apikey}, (err, user) ->
