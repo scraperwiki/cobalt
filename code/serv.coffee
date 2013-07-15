@@ -23,11 +23,10 @@ _ = require 'underscore'
 redis = require 'redis'
 
 exports.redisClient = redisClient = redis.createClient 6379, process.env.REDIS_SERVER
-redisClient.on 'connect', ->
-  if /production|staging/.test process.env.NODE_ENV
-    redisClient.auth process.env.REDIS_PASSWORD, (err) ->
-      if err?
-        console.warn 'Redis auth error: ', err
+if /production|staging/.test process.env.NODE_ENV
+  redisClient.auth process.env.REDIS_PASSWORD, (err) ->
+    if err?
+      console.warn 'Redis auth error: ', err
 
 redisClient.on 'pmessage', (pattern, channel, message) ->
   #TODO: try catch
