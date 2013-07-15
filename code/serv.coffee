@@ -300,7 +300,7 @@ server = app.listen port, ->
   if fs.existsSync(port)
     fs.chmodSync port, 0o600
     child_process.exec "chown www-data #{port}"
-  redisClient.psubscribe 'cobalt.dataset.*.update'
+  redisClient.psubscribe "#{process.env.NODE_ENV}.cobalt.dataset.*.update"
 
 
 exports.unix_user_add = (user_name, uid, callback) ->

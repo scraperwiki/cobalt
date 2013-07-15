@@ -13,7 +13,7 @@ describe 'Box update subscriptions', ->
 
   it 'subscribes to the correct channel pattern', ->
     @psubSpy.called.should.be.true
-    @psubSpy.calledWith('cobalt.dataset.*.update')
+    @psubSpy.calledWith("#{process.env.NODE_ENV}.cobalt.dataset.*.update")
       .should.be.true
 
   context 'when we receive a message on the box channel', ->
@@ -23,7 +23,7 @@ describe 'Box update subscriptions', ->
         message = JSON.stringify
           boxes: ['foo', 'bar']
           message: "We have updated"
-        testClient.publish 'cobalt.dataset.d1000.update', message
+        testClient.publish "#{process.env.NODE_ENV}.cobalt.dataset.d1000.update", message
 
     before ->
       @execStub = sinon.stub child_process, 'exec'
