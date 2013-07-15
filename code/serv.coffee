@@ -20,6 +20,14 @@ mongoose = require 'mongoose'
 request = require 'request'
 checkIdent = require 'ident-express'
 _ = require 'underscore'
+redis = require 'redis'
+
+exports.redisClient = redisClient = redis.createClient 6379, process.env.REDIS_SERVER
+redisClient.on 'connect', ->
+  if /production|staging/.test process.env.NODE_ENV
+    redisClient.auth process.env.REDIS_PASSWORD, (err) ->
+      if err?
+        console.warn 'Redis auth error: ', err
 
 Box = require 'models/box'
 User = require 'models/user'
