@@ -29,6 +29,12 @@ redisClient.on 'connect', ->
       if err?
         console.warn 'Redis auth error: ', err
 
+redisClient.on 'pmessage', (pattern, channel, message) ->
+  #TODO: try catch
+  message = JSON.parse message
+  for box in message.boxes
+    child_process.exec "su #{box} -l -c ~/tool/hooks/update"
+
 Box = require 'models/box'
 User = require 'models/user'
 
@@ -294,6 +300,7 @@ server = app.listen port, ->
   if fs.existsSync(port)
     fs.chmodSync port, 0o600
     child_process.exec "chown www-data #{port}"
+  redisClient.psubscribe 'cobalt.dataset.*.update'
 
 
 exports.unix_user_add = (user_name, uid, callback) ->
