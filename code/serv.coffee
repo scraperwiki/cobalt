@@ -29,10 +29,13 @@ if /production|staging/.test process.env.NODE_ENV
       console.warn 'Redis auth error: ', err
 
 redisClient.on 'pmessage', (pattern, channel, message) ->
+  updatePath = "/tool/hooks/update"
   #TODO: try catch
   message = JSON.parse message
   for box in message.boxes
-    child_process.exec "su #{box} -l -c ~/tool/hooks/update"
+    if fs.existsSync "/#{process.env.CO_STORAGE_DIR}/home/#{box}/#{updatePath}"
+      console.log "Executing update hook for #{box}"
+      child_process.exec "su #{box} -l -c ~#{updatePath}"
 
 Box = require 'models/box'
 User = require 'models/user'
