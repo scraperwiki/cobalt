@@ -11,11 +11,18 @@ create_user() {
   passwd_row="${USERNAME}:x:${UID}:${gid}::/home:/bin/bash"
   shadow_row="${USERNAME}:x:15607:0:99999:7:::"
   (
-    flock -w 2 9 || exit 99
+    flock -w 10 9 || exit 99
     { cat ${CO_STORAGE_DIR}/etc/passwd ; echo "$passwd_row" ; } > ${CO_STORAGE_DIR}/etc/passwd+
     mv ${CO_STORAGE_DIR}/etc/passwd+ ${CO_STORAGE_DIR}/etc/passwd
+
+    cat ${CO_STORAGE_DIR}/etc/passwd > /opt/basejail/etc/passwd+
+    mv /opt/basejail/etc/passwd+ /opt/basejail/etc/passwd
+
     { cat ${CO_STORAGE_DIR}/etc/shadow ; echo "$shadow_row" ; } > ${CO_STORAGE_DIR}/etc/shadow+
     mv ${CO_STORAGE_DIR}/etc/shadow+ ${CO_STORAGE_DIR}/etc/shadow
+
+    cat /etc/group > /opt/basejail/etc/group+
+    mv /opt/basejail/etc/group+ /opt/basejail/etc/group
    ) 9>${CO_STORAGE_DIR}/etc/passwd.cobalt.lock
 }
 
@@ -35,9 +42,6 @@ create_user_directories() {
 
   # Users owns her home.
   chown -R "$USERNAME:" "${CO_STORAGE_DIR}/home/${USERNAME}"
-
-  cp /etc/passwd /opt/basejail/etc/passwd-inflight
-  mv /opt/basejail/etc/passwd-inflight /opt/basejail/etc/passwd
 
   mkdir -p "${CO_STORAGE_DIR}/sshkeys/${USERNAME}"
 }
