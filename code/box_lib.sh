@@ -23,7 +23,7 @@ create_user() {
 
     cat /etc/group > /opt/basejail/etc/group+
     mv /opt/basejail/etc/group+ /opt/basejail/etc/group
-    echo "${USERNAME} memory,cpu,cpuacct ${USERNAME}" >> /etc/cgrules.conf
+    echo "${USERNAME} memory,cpu,cpuacct ${USERNAME}" >> ${CO_STORAGE_DIR}/etc/cgrules.conf
     pkill -USR2 cgrulesengd
    ) 9>${CO_STORAGE_DIR}/etc/passwd.cobalt.lock
 }
