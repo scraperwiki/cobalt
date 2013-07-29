@@ -7,7 +7,6 @@
     "express": "~3",
     "mongoose": "~2",
     "request": ">0",
-    "ejs": ">0",
     "underscore": "~1.4.4",
     "async": "~0.1.22",
     "bcrypt": "~0.7.3",
