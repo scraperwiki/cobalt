@@ -64,6 +64,9 @@ describe 'Upload file to box', ->
         port: 3000
         path: "/newdatabox/file/"
         headers: headers
+        # Avoid http request pooling in order to avoid keeping the server
+        # alive, breaking the tests.
+        agent: false
       form.pipe request
       request.on 'response', (resp) ->
         resp.statusCode.should.equal 403
@@ -94,6 +97,9 @@ describe 'Upload file to box', ->
           port: 3000
           path: "/newdatabox/file/"
           headers: headers
+          # Avoid http request pooling in order to avoid keeping the server
+          # alive, breaking the tests.
+          agent: false
         form.pipe request
         request.on 'response', (resp) =>
           @resp = resp
