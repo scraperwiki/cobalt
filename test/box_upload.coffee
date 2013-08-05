@@ -4,8 +4,6 @@ child_process = require 'child_process'
 fs     = require 'fs'
 http = require 'http'
 
-# https://github.com/mikeal/request
-request = require 'request'
 # https://github.com/felixge/node-form-data
 FormData = require 'form-data'
 # https://github.com/visionmedia/should.js/
@@ -31,7 +29,8 @@ describe 'Upload file to box', ->
     URL = "#{BASE_URL}/newdatabox/file/"
 
     before (done) ->
-      server = require 'serv'
+      delete require.cache.server
+      @server = require 'server'
       mongoose = require 'mongoose'
 
       # write_stub = sinon.stub(fs, 'writeFileSync').withArgs "/opt/cobalt/etc/sshkeys/newdatabox/authorized_keys"
@@ -39,11 +38,17 @@ describe 'Upload file to box', ->
       # chown_stub = sinon.stub(child_process, 'exec').withArgs("chown newdatabox: /opt/cobalt/etc/sshkeys/newdatabox/authorized_keys").callsArg(1)
 
       # TODO: icky, we want fixtures or mocking
-      User.collection.drop ->
-        Box.collection.drop ->
-          new User({apikey: apikey, shortName: 'kiteorg'}).save ->
-            User.findOne {apikey: apikey}, (err, user) ->
-              new Box({users: ['kiteorg'], name: 'newdatabox'}).save done
+      User.collection.drop =>
+        Box.collection.drop =>
+          new User({apikey: apikey, shortName: 'kiteorg'}).save =>
+            User.findOne {apikey: apikey}, (err, user) =>
+              new Box({users: ['kiteorg'], name: 'newdatabox'}).save =>
+                @server.start (err) ->
+                  done(err)
+
+    after (done) ->
+      @server.stop (err) ->
+        done()
 
     it 'returns an error when posting files without an API key', (done) ->
       form = new FormData()

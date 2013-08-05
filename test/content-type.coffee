@@ -15,15 +15,19 @@ describe 'Content Types', ->
   content_type = (path) ->
     describe '( Path /' + path + ' )', ->
       server = null
- 
+
       before (done) ->
-        server = require 'serv'
-        done()
- 
+        server = require 'server'
+        server.start (err) ->
+          done()
+
+      after (done) ->
+        server.stop (err) ->
+          done()
+
       it 'has JSON MIME type on get', (done) ->
         u = baseurl + path
         request.get {url:u}, (err, resp, body) ->
           console.log body
           resp.headers['content-type'].should.include 'application/json'
           done()
-

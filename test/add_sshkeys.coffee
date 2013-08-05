@@ -45,20 +45,25 @@ describe 'Add SSH keys:', ->
     URL = "#{BASE_URL}/newdatabox/sshkeys"
 
     before (done) ->
-      server = require 'serv'
+      server = require 'server'
       mongoose = require 'mongoose'
 
       write_stub = sinon.stub(fs, 'writeFile').callsArg(3)
       chmod_stub = sinon.stub(fs, 'chmod').callsArg(2)
       chown_stub = sinon.stub(child_process, 'exec').callsArg(1)
       exists_stub = sinon.stub fs, 'exists', existsFake
-      done()
 
-    after ->
+      server.start (err) ->
+        done(err)
+
+    after (done) ->
       fs.writeFile.restore()
       fs.chmod.restore()
       child_process.exec.restore()
       fs.exists.restore()
+
+      server.stop (err) ->
+        done(err)
 
     describe 'when the box exists', ->
       response = null

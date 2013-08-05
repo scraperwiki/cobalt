@@ -318,21 +318,28 @@ exports.unix_user_add = (user_name, uid, callback) ->
 if fs.existsSync(port)
   fs.unlinkSync port
 
+PATTERN = "#{process.env.NODE_ENV}.cobalt.dataset.*.update"
+
 # Call .start() and .stop() to start and stop the server.
 server = null
+psubscribeListener = null
 exports.start = (cb) ->
   server = app.listen port, ->
     if fs.existsSync(port)
       fs.chmodSync port, 0o600
       child_process.exec "chown www-data #{port}"
-    pattern = "#{process.env.NODE_ENV}.cobalt.dataset.*.update"
-    redisClient.psubscribe pattern
-    redisClient.on 'psubscribe', ->
+    redisClient.psubscribe PATTERN
+    psubscribeListener = ->
       cb null, server
+    redisClient.on 'psubscribe', psubscribeListener
 
 exports.stop = (cb) ->
   console.log "Gracefully stopping..."
+  redisClient.punsubscribe PATTERN
+  redisClient.removeListener 'psubscribe', psubscribeListener
+  psubscribeListener = null
   server.close ->
+    server = null
     cb()
 
 # Wait for all connections to finish before quitting
