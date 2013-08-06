@@ -82,14 +82,7 @@ mongoose.connect process.env.CU_DB,
     socketOptions:
       keepAlive: 1
 
-server_hostname = ''
-root_url = ''
 port = process.env.COBALT_PORT
-app.all "*", (req, res, next) ->
-  server_hostname = req.header('host')
-  root_url = "http://#{server_hostname}"
-  root_url = root_url + ":#{process.env.COBALT_PORT}" unless (port == '8000' || isNaN(parseInt(port)))
-  next()
 
 # Templating language
 app.set('view engine', 'ejs')
