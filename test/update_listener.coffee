@@ -6,6 +6,7 @@ child_process = require 'child_process'
 describe 'Box update subscriptions', ->
   context 'when we receive a message on the box channel', ->
     before (done) ->
+      delete require.cache.server
       @server = require 'server'
       @psubSpy = sinon.spy @server.redisClient, 'psubscribe'
       @server.start (err) ->
