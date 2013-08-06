@@ -19,26 +19,28 @@ describe 'Creating a box:', ->
   apikey = String(Math.random()).replace('0.', '')
 
   describe '( POST /<boxname> )', ->
-    server = null
     exec_stub = null
     newboxname = String(Math.random()).replace('0.','')
 
     before (done) ->
-      server = require 'serv'
+      @server = require 'server'
       sinon.stub console, 'tick'
-      exec_stub = sinon.stub server, 'unix_user_add', (_a, _b, callback) ->
+      exec_stub = sinon.stub @server, 'unix_user_add', (_a, _b, callback) ->
         obj =
           publish_token: '32424dfsdr3'
           database: 'scraperwiki.sqlite'
         callback null, JSON.stringify(obj), null
 
-      User.collection.drop ->
-        Box.collection.drop ->
-          new User({apikey: apikey, shortName: 'kiteorg'}).save done
+      @server.start (err) ->
+        User.collection.drop ->
+          Box.collection.drop ->
+            new User({apikey: apikey, shortName: 'kiteorg'}).save done
 
-    after ->
+    after (done) ->
       console.tick.restore()
-      server.unix_user_add.restore()
+      @server.unix_user_add.restore()
+      @server.stop (err) ->
+        done(err)
 
     it "gives an error when creating a databox without a key", (done) ->
       options =
