@@ -1,7 +1,8 @@
 DatabaseCleaner = require "database-cleaner"
 databaseCleaner = new DatabaseCleaner "mongodb"
 connect = require("mongodb").connect
-connect "mongodb://localhost/cu-test", (err, db) ->
+DB = "mongodb://localhost/cu-test"
+connect DB, (err, db) ->
   databaseCleaner.clean db, ->
-    console.log "done"
+    console.log "#{DB} cleaned"
     db.close()
