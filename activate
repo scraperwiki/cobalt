@@ -11,6 +11,8 @@ PATH=$(pwd)/node_modules/.bin:$(pwd)/bin:$PATH
 # See http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
 export NODE_PATH=$(pwd)/code${NODE_PATH+:}${NODE_PATH}
 
+export ACK_OPTIONS="--type-add coffee=.coffee"
+
 if [ -z "$COBALT_PORT" ]
 then
   export COBALT_PORT=3000

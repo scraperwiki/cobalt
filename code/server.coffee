@@ -190,8 +190,26 @@ console.tick = (stuff...) ->
   # Prints out the time as well as stuff.
   console.log.apply console, [(new Date()).toISOString()].concat(stuff)
 
+maxInFlightMiddleware = (max_in_flight) ->
+  inFlightByBox = {}
+  return (req, res, next) ->
+    if inFlightByBox[req.params.boxname] is undefined
+      inFlightByBox[req.params.boxname] = 0
+
+    if inFlightByBox[req.params.boxname] >= max_in_flight
+      return res.send 429, error:'Request throttled, too many in flight'
+
+    inFlightByBox[req.params.boxname] += 1
+    origEnd = res.end
+    res.end = ->
+      origEnd.apply res, arguments
+      inFlightByBox[req.params.boxname] -= 1
+      if inFlightByBox[req.params.boxname] == 0
+        delete inFlightByBox[req.params.boxname]
+    next()
+
 # Exec endpoint - see wiki for note about security
-app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
+app.post "/:boxname/exec/?", maxInFlightMiddleware(5), check_api_and_box, (req, res) ->
   console.tick "got POST exec #{req.params.boxname} #{req.body.cmd}"
   res.removeHeader 'Content-Type'
   cmd = req.body.cmd
@@ -205,7 +223,6 @@ app.post "/:boxname/exec/?", check_api_and_box, (req, res) ->
 
   req.on 'end', -> su.kill()
   req.on 'close', -> su.kill()
-
 
 myCheckIdent = (req, res, next) ->
   if req.ip in ["88.211.55.91", "127.0.0.1"]
@@ -299,7 +316,6 @@ app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
           next = "#{next}##{dir}/#{file.name}"
         return res.redirect 301, next
 
-
 exports.unix_user_add = (user_name, uid, callback) ->
   console.log "Zarino woz ere"
   homeDir = "#{process.env.CO_STORAGE_DIR}/home"
@@ -351,7 +367,7 @@ process.on 'SIGTERM', ->
   else
     console.warn "No server to stop; exiting"
     process.exit()
-    
+
   setTimeout ->
     console.error "Could not close connections in time, forcefully shutting down"
     process.exit 1
