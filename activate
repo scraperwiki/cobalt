@@ -12,6 +12,7 @@ PATH=$(pwd)/node_modules/.bin:$(pwd)/bin:$PATH
 export NODE_PATH=$(pwd)/code${NODE_PATH+:}${NODE_PATH}
 
 export ACK_OPTIONS="--type-add coffee=.coffee"
+export CO_STORAGE_DIR=${CO_STORAGE_DIR-$(pwd|sed 's:/::')/test/fixtures}
 
 if [ -z "$COBALT_PORT" ]
 then
