@@ -51,6 +51,7 @@ describe 'the exec endpoint', ->
 
   after (done) ->
     @server.stop (err) ->
+      child_process.spawn.restore()
       done(err)
 
   oneGoodExec = (done) ->
