@@ -7,6 +7,7 @@ import (
 	"net/http/cgi"
 	"net/http/fcgi"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -18,7 +19,23 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	path := url.Path
 	slice := strings.Split(path, "/")
 	lastComponent := slice[len(slice)-1]
-	handler := &cgi.Handler{Path: lastComponent}
+	cgipath := lastComponent
+	cgiargs := []string{}
+	user := "drj"
+	if os.Getuid() == 0 {
+		// insert su
+		cgicmd := strings.Join([]string{".", cgipath}, "/")
+		cgiargs = []string{"-c", cgicmd, user}
+		log.Print(cgiargs)
+		var err error
+		cgipath, err = exec.LookPath("su")
+		if err != nil {
+			log.Panic(err)
+		}
+	}
+	handler := &cgi.Handler{Path: cgipath,
+		Dir:  ".",
+		Args: cgiargs}
 	handler.ServeHTTP(rw, req)
 }
 
