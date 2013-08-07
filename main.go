@@ -4,16 +4,22 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/cgi"
 	"net/http/fcgi"
 	"os"
+	"strings"
 )
 
 type Handler struct {
 }
 
 func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	rw.Header()["foo"] = []string{"ia"}
-	rw.Write([]byte("Hello World!\n"))
+	url := req.URL
+	path := url.Path
+	slice := strings.Split(path, "/")
+	lastComponent := slice[len(slice)-1]
+	handler := &cgi.Handler{Path: lastComponent}
+	handler.ServeHTTP(rw, req)
 }
 
 func main() {
