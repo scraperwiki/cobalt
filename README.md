@@ -55,6 +55,15 @@ when you enter the directory. Briefly:
     # append direnv setup to your bash profile
     echo 'eval "$(direnv hook $0)"' >> ${HOME}/.bashrc
 
+    # Then cd to the cobalt directory and enable the .envrc with direnv:
+    :~$ cd sw/cobalt/
+    .envrc is not allowed
+
+    :~/sw/cobalt$ direnv allow
+    direnv: loading ~/sw/.envrc
+    connect-assets not found, please run npm install
+    direnv export: +ACK_OPTIONS +COBALT_PORT +CO_STORAGE_DIR +NODE_PATH ~PATH
+
 ### Getting Started ###
 
 You need to set up the environment and so on:
