@@ -41,6 +41,29 @@ Don't forget to sync your repositories:
 (you need to 'npm install' every now and then too, but you won't
 generally need to use the '-f' option (see above))
 
+
+
+### Automatically getting the correct environment with direnv ##
+
+[direnv](http://direnv.net) can be used to automatically "activate" the environment
+when you enter the directory. Briefly:
+
+    # (install go and set up your GOPATH and PATH sensibly)
+    go get github.com/zimbatm/direnv
+    go install github.com/zimbatm/direnv
+
+    # append direnv setup to your bash profile
+    echo 'eval "$(direnv hook $0)"' >> ${HOME}/.bashrc
+
+    # Then cd to the cobalt directory and enable the .envrc with direnv:
+    :~$ cd sw/cobalt/
+    .envrc is not allowed
+
+    :~/sw/cobalt$ direnv allow
+    direnv: loading ~/sw/.envrc
+    connect-assets not found, please run npm install
+    direnv export: +ACK_OPTIONS +COBALT_PORT +CO_STORAGE_DIR +NODE_PATH ~PATH
+
 ### Getting Started ###
 
 You need to set up the environment and so on:
