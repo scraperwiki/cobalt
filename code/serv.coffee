@@ -1,2 +1,3 @@
 server = require 'server'
-server.start()
+server.start (err, app) ->
+  console.log "Server started."
