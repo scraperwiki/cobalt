@@ -218,17 +218,26 @@ app.post "/:boxname/exec/?", maxInFlightMiddleware(5), check_api_and_box, (req, 
   req.on 'close', -> su.kill()
 
 myCheckIdent = (req, res, next) ->
+  # ScraperWiki office / localhost
   if req.ip in ["88.211.55.91", "127.0.0.1"]
     req.ident = 'root'
     next()
   else
     checkIdent req, res, next
 
+requireAuth = (req, res, next) ->
+  if req.ident in ["root", "custard"]
+    next()
+  else
+    return res.send 403
+      error: 'Only Custard running as Root can contact me'
+
+
 # Create a box.
 # Since we're creating a box, it doesn't have to exist, so we
 # don't need to call check_box().
 
-app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, (req, res) ->
+app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, requireAuth, (req, res) ->
   console.tick "got request create box #{req.params.newboxname}"
   res.header('Content-Type', 'application/json')
   boxname = req.params.newboxname
@@ -236,9 +245,6 @@ app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, (req, res) 
   if not re.test boxname
     return res.send 404,
       error: "Box name should match the regular expression #{String(re)}"
-  if req.ident != 'root' && req.ident != 'custard'
-    return res.send 403
-      error: 'Only Custard running as Root can contact me'
   if not req.body.uid?
     return res.send 400,
       error: "Specify a UID"
@@ -254,10 +260,7 @@ app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, (req, res) 
       return res.send stdout
 
 # Add an SSH key to a box
-app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, (req, res) ->
-  if req.ident != 'root'
-    return res.send 400,
-      error: "Only custard running as root can contact me"
+app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, requireAuth, (req, res) ->
   boxname = req.params.boxname
 
   res.header('Content-Type', 'application/json')
