@@ -236,7 +236,7 @@ app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, (req, res) 
   if not re.test boxname
     return res.send 404,
       error: "Box name should match the regular expression #{String(re)}"
-  if req.ident != 'root'
+  if req.ident != 'root' && req.ident != 'custard'
     return res.send 403
       error: 'Only Custard running as Root can contact me'
   if not req.body.uid?
