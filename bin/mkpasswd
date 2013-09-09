@@ -1,0 +1,32 @@
+#!/usr/bin/env coffee
+
+# construct the passwd file.
+
+mongo = require 'mongodb'
+_ = require 'underscore'
+
+mongo.MongoClient.connect process.env.CU_DB, (err, db) ->
+  userTable = db.collection('users')
+  userTable.find().toArray (err, users) ->
+    # maps boxes to owners (via the datasets collection).
+    owner = {}
+    # maps shortName to user object.
+    shortNameToUser = {}
+    _.map users, (user) ->
+      shortNameToUser[user.shortName] = user
+    datasetTable = db.collection('datasets')
+    datasetTable.find().toArray (err, datasets) ->
+      _.map datasets, (dataset) ->
+        owner[dataset.box] = dataset.user
+        _.map dataset.views, (view) ->
+          owner[view.box] = dataset.user
+      boxTable = db.collection('boxes')
+      boxTable.find().toArray (err, boxes) ->
+        _.map boxes, (box) ->
+          short = owner[box.name]
+          user = shortNameToUser[short]
+          if not user
+            console.warn "box #{box.name} has no owner"
+          dn = user?.displayName
+          console.log "#{box.name}:x:#{box.uid}:10000:#{short} - #{dn}:/home:/bin/bash"
+        db.close()
