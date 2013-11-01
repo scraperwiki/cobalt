@@ -15,12 +15,15 @@ scraperwiki.xdm = new easyXDM.Rpc({
     },
   }, {
     remote: {
-      // redirect and get URL are the names of methods implemented
-      // by custard
+      // These easyXDM methods are used by custard
+      // (in client/code/view/tool/content.coffee) and
+      // ultimately exposed to developers via asynchronous
+      // functions in scraperwiki.com/js/scraperwiki.js
       redirect: {},
       getURL: {},
       rename: {},
-      pushSQL: {}
+      pushSQL: {},
+      getUserDetails: {}
     }
   });
 </script>
