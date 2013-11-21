@@ -146,6 +146,7 @@ allowedIP = allowedIP.concat [
     "88.211.55.91"
     "176.58.127.147"
     "23.23.37.109"
+    "151.237.236.138" # Liverpool office
     ]
 # Middleware that checks the IP address of the connecting
 # partner (which we expect to be custard).
