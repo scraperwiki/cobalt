@@ -22,6 +22,8 @@ checkIdent = require 'ident-express'
 _ = require 'underscore'
 redis = require 'redis'
 
+liverpool_office_ip = '151.237.236.138'
+
 # The test rely on the redis client being created now at module import time,and rely on the
 # listen happening later, when the .start() method is called.
 exports.redisClient = redisClient = redis.createClient 6379, process.env.REDIS_SERVER
@@ -146,7 +148,7 @@ allowedIP = allowedIP.concat [
     "88.211.55.91"
     "176.58.127.147"
     "23.23.37.109"
-    "151.237.236.138" # Liverpool office
+    liverpool_office_ip
     ]
 # Middleware that checks the IP address of the connecting
 # partner (which we expect to be custard).
@@ -220,7 +222,7 @@ app.post "/:boxname/exec/?", maxInFlightMiddleware(5), check_api_and_box, (req, 
 
 myCheckIdent = (req, res, next) ->
   # ScraperWiki office / localhost
-  if req.ip in ["88.211.55.91", "127.0.0.1"]
+  if req.ip in [liverpool_office_ip, "127.0.0.1"]
     req.ident = 'root'
     next()
   else
