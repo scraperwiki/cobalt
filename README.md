@@ -1,3 +1,5 @@
+*This documentation is out of date, as it refers to lithium that we no longer use*
+
 # ScraperWiki Cobalt #
 
 Cobalt is a ScraperWiki service where people can run code on the
