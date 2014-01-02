@@ -46,35 +46,6 @@ create_user_directories() {
   mkdir -p "${CO_STORAGE_DIR}/sshkeys/${USERNAME}"
 }
 
-furnish_box() {
-  # Just a wrapper really, switches to the user, then runs
-  # another function.
-  USERNAME="$1"
-  sudo -u "$USERNAME" sh -c "CO_STORAGE_DIR=${CO_STORAGE_DIR}; . ./code/box_lib.sh; furnish_as_user"
-}
-
-furnish_as_user() {
-  # We can assume that this function is called from within an
-  # 'su', so any changes to cd etc will be undone when we finish.
-  BOXNAME="$(whoami)"
-  TEMPLATES=/opt/cobalt/code/templates
-
-  # Go home.  Note: We're not chrooted.
-  cd ${CO_STORAGE_DIR}/home/"$BOXNAME"
-
-  # box file
-  # Slightly hairy shell, because the .json file cannot end in a
-  # newline.
-  sh $TEMPLATES/box.json.template > box.json
-
-  # create public http directory
-  mkdir http
-
-  # create incoming directory for file uploads
-  mkdir incoming
-
-  cat box.json
-}
 
 delete_user_directories() {
   USERNAME="$1"
