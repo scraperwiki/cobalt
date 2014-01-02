@@ -360,7 +360,7 @@ exports.stop = (cb) ->
 # Wait for all connections to finish before quitting
 process.on 'SIGTERM', ->
   if server
-    server.stop ->
+    server.close ->
       console.warn "All connections finished, exiting"
       process.exit()
   else
