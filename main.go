@@ -53,8 +53,14 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// on $HOME: The cgi module only sets certain
 	// environment variables, and leaves HOME unset.
 	// We set the directory within the command.
-	handler := &cgi.Handler{Path: cgipath,
-		Args: cgiargs}
+	handler := &cgi.Handler{
+		Path: cgipath,
+		Args: cgiargs,
+		Env: []string{
+			"SCRIPT_NAME=" + path,
+			"SCRIPT_FILENAME=" + "/home/cgi-bin/" + command,
+			"SERVER_SOFTWARE=github.com/scraperwiki/gobalt",
+		}}
 	handler.ServeHTTP(rw, req)
 }
 
