@@ -35,7 +35,8 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !ok {
 		user = []string{"databox"}
 	}
-	cgiargs := []string{"-c", "cd /home/cgi-bin && /home/cgi-bin/" + command, user[0]}
+	// This setup prevents shell injection.
+	cgiargs := []string{"-c", "cd /home/cgi-bin && /home/cgi-bin/\"$1\"", user[0], "--", "-", command}
 	if os.Getuid() == 0 {
 		cgipath = "su"
 	}
