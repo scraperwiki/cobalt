@@ -23,11 +23,12 @@ type Handler struct {
 }
 
 func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	log.Println("Inbound request for", req.URL.String())
+	log.Println(req.URL.String())
 	url := req.URL
 	path := url.Path
+
 	slice := strings.Split(path, "/")
-	command := strings.Join(slice[4:], "/")
+	filepath := strings.Join(slice[4:], "/")
 	// We either execute "sh -c something" (when not root),
 	// or "su -c something" (when root).
 	cgipath := "sh"
@@ -35,8 +36,17 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !ok {
 		user = []string{"databox"}
 	}
+	// If path begins with /http, then serve a listing.
+	if strings.HasSuffix(path, "/") && slice[3] == "http" {
+		prefix := strings.Join(slice[:4], "/")
+		root := http.Dir("/ebs/home/" + user[0] + "/http/")
+
+		staticHandler := http.StripPrefix(prefix, http.FileServer(root))
+		staticHandler.ServeHTTP(rw, req)
+		return
+	}
 	// This setup prevents shell injection.
-	cgiargs := []string{"-c", "cd /home/cgi-bin && /home/cgi-bin/\"$1\"", user[0], "--", "-", command}
+	cgiargs := []string{"-c", "cd /home/cgi-bin && /home/cgi-bin/\"$1\"", user[0], "--", "-", filepath}
 	if os.Getuid() == 0 {
 		cgipath = "su"
 	}
@@ -58,7 +68,7 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		Args: cgiargs,
 		Env: []string{
 			"SCRIPT_NAME=" + path,
-			"SCRIPT_FILENAME=" + "/home/cgi-bin/" + command,
+			"SCRIPT_FILENAME=" + "/home/cgi-bin/" + filepath,
 			"SERVER_SOFTWARE=github.com/scraperwiki/gobalt",
 		}}
 	handler.ServeHTTP(rw, req)
