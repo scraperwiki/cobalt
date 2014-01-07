@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net"
 	"net/http"
@@ -8,34 +9,33 @@ import (
 	"net/http/fcgi"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+)
+
+var (
+	socketPath  = flag.String("socketpath", "/var/run/gobalt.socket", "path to listening socket")
+	socketUser  = flag.String("socketuser", "www-data", "owner for socket")
+	socketGroup = flag.String("socketgroup", "www-data", "owner for socket")
 )
 
 type Handler struct {
 }
 
 func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	log.Println("Inbound request for", req.URL.String())
 	url := req.URL
 	path := url.Path
 	slice := strings.Split(path, "/")
-	lastComponent := slice[len(slice)-1]
+	command := strings.Join(slice[4:], "/")
 	// We either execute "sh -c something" (when not root),
 	// or "su -c something" (when root).
 	cgipath := "sh"
-	command := strings.Join([]string{".", lastComponent}, "/")
-	// The usual case is that the URL is of the form:
-	// https://premium.scraperwiki.com/febb3gq/rtgdf/http/thing
-	// in which case the binary to run will be "home/http/thing",
-	// and the PWD will be / in the box's chrooted
-	// environment.
-	// (RFC 3875/ says that the PWD will be the directory
-	// containing the script, but that's quite tricky to achieve).
-	if strings.Contains(path, "/http/") {
-		slice = strings.SplitN(path, "/http/", 2)
-		command = strings.Join([]string{"home/http/", slice[1]}, "")
+	user, ok := req.Header["Cobalt-User"]
+	if !ok {
+		user = []string{"databox"}
 	}
-	user := "drj"
-	cgiargs := []string{"-c", command, user}
+	cgiargs := []string{"-c", "cd /home/cgi-bin && /home/cgi-bin/" + command, user[0]}
 	if os.Getuid() == 0 {
 		cgipath = "su"
 	}
@@ -51,22 +51,35 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// (to be / in the box's chrooted environment).
 	// on $HOME: The cgi module only sets certain
 	// environment variables, and leaves HOME unset.
+	// We set the directory within the command.
 	handler := &cgi.Handler{Path: cgipath,
-		Dir:  ".",
 		Args: cgiargs}
 	handler.ServeHTTP(rw, req)
 }
 
 func main() {
-	l, err := net.Listen("tcp4", ":2000")
+	flag.Parse()
+	_ = os.Remove(*socketPath)
+	l, err := net.Listen("unix", *socketPath)
 	if err != nil {
 		log.Panic(err)
 	}
 	defer l.Close()
-	handler := &Handler{}
-	err = fcgi.Serve(l, handler)
+	err = exec.Command("chown", *socketUser+":"+*socketGroup, *socketPath).Run()
 	if err != nil {
 		log.Panic(err)
 	}
-	os.Exit(0)
+	handler := &Handler{}
+	log.Println("Serving on", *socketPath)
+
+	go func() {
+		err = fcgi.Serve(l, handler)
+		if err != nil {
+			log.Panic(err)
+		}
+	}()
+
+	sig := make(chan os.Signal)
+	signal.Notify(sig, os.Interrupt)
+	<-sig
 }
