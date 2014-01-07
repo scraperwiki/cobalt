@@ -46,7 +46,15 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	// This setup prevents shell injection.
-	cgiargs := []string{"-c", "cd /home/cgi-bin && /home/cgi-bin/\"$1\"", user[0], "--", "-", filepath}
+	// Try first /home/cgi-bin, then /home/tool/cgi-bin
+	code := `
+		if [ -x /home/cgi-bin/"$1" ]; then
+			cd /home/cgi-bin && /home/cgi-bin/"$1"
+		else
+			cd /home/tool/cgi-bin && /home/tool/cgi-bin/"$1"
+		fi
+	`
+	cgiargs := []string{"-c", code, user[0], "--", "-", filepath}
 	if os.Getuid() == 0 {
 		cgipath = "su"
 	}
