@@ -36,6 +36,13 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !ok {
 		user = []string{"databox"}
 	}
+
+	// Prevent access via /listing
+	if slice[3] != "http" && slice[3] != "cgi-bin" {
+		http.NotFound(rw, req)
+		return
+	}
+
 	// If path begins with /http, then serve a listing.
 	if strings.HasSuffix(path, "/") && slice[3] == "http" {
 		prefix := strings.Join(slice[:4], "/")
