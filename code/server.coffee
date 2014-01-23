@@ -36,12 +36,19 @@ redisClient.on 'pmessage', (pattern, channel, message) ->
   updatePath = "tool/hooks/update"
   #TODO: try catch
   message = JSON.parse message
+  origin = message.origin
+
+  url = "https://#{origin.boxServer}/#{origin.box}/#{origin.boxJSON.publish_token}"
 
   #TODO(pwaller): use async exists
   for box in message.boxes
     if fs.existsSync "/#{process.env.CO_STORAGE_DIR}/home/#{box}/#{updatePath}"
       console.log "Executing update hook for #{box}"
-      child_process.exec "su #{box} -l -c /home/#{updatePath}"
+      arg0 = "/home/#{updatePath}"
+      cmd = arg0 + ' "$@"'
+      run = "su #{box} -l -c '#{cmd}' -- #{arg0} #{url}"
+      console.log "Running: ", run
+      child_process.exec run
 
 Box = require 'models/box'
 User = require 'models/user'
