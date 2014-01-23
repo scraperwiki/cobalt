@@ -46,7 +46,9 @@ redisClient.on 'pmessage', (pattern, channel, message) ->
       console.log "Executing update hook for #{box}"
       arg0 = "/home/#{updatePath}"
       cmd = arg0 + ' "$@"'
-      child_process.exec "su #{box} -l -c '#{cmd}' -- #{arg0} #{url}"
+      run = "su #{box} -l -c '#{cmd}' -- #{arg0} #{url}"
+      console.log "Running: ", run
+      child_process.exec run
 
 Box = require 'models/box'
 User = require 'models/user'
