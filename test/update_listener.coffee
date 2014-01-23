@@ -32,7 +32,7 @@ describe 'Box update subscriptions', ->
             box: "baz"
             boxServer: "bazServer"
             boxJSON:
-              publish_token: bazToken
+              publish_token: "bazToken"
         channel = "#{process.env.NODE_ENV}.cobalt.dataset.d1000.update"
         testClient.publish channel, message
 
