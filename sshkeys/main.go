@@ -1,8 +1,9 @@
 package main
 
 import (
-	// "log"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -10,26 +11,14 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func GetDatabase() *mgo.Database {
-	db_host := os.Getenv("CU_DB_HOST")
-	session, err := mgo.Dial(db_host)
-	check(err)
-
-	return session.DB("cu-live-eu")
-}
-
 type Dataset struct {
 	CreatorDisplayName string `bson:"creatorDisplayName"`
 	CreatorShortName   string `bson:"creatorShortName"`
 	DisplayName        string `bson:"displayName"`
 	User               string `bson:"user"`
 	Tool               string `bson:"tool"`
+	State              string `bson:"state"`
+	BoxServer          string `bson:"boxServer"`
 }
 
 type User struct {
@@ -45,6 +34,20 @@ type Box struct {
 	Users  []string `bson:"users"`
 }
 
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func GetDatabase() *mgo.Database {
+	db_host := os.Getenv("CU_DB")
+	session, err := mgo.Dial(db_host)
+	check(err)
+
+	return session.DB("cu-live-eu")
+}
+
 func MatchAny(what string, values ...string) bson.M {
 	var query []bson.M
 
@@ -55,6 +58,7 @@ func MatchAny(what string, values ...string) bson.M {
 	return bson.M{"$or": query}
 }
 
+// Obtain list of users allowed to access a box (directly specified in Box struct)
 func usersFromBox(db *mgo.Database, boxName string) (users []string) {
 
 	x := db.C("boxes").Find(MatchAny("name", boxName))
@@ -74,7 +78,9 @@ func usersFromBox(db *mgo.Database, boxName string) (users []string) {
 	return users
 }
 
-// Looking through canBeReally, find all SSH keys
+// Looking through canBeReally, find all SSH keys for all `usernames`.
+// Makes as many queries as necessary according to the depth of the canBeReally
+// tree, pruning duplicates.
 func allKeysFromUsernames(db *mgo.Database, usernames []string) []string {
 	seenSet := map[string]struct{}{}
 	isSeen := func(u string) bool {
@@ -90,15 +96,17 @@ func allKeysFromUsernames(db *mgo.Database, usernames []string) []string {
 	allKeys := []string{}
 
 	for len(usernames) > 0 {
+
 		toQuery := usernames
 		extendSeenSet(toQuery)
 		usernames = []string{}
 
-		usersQuery := db.C("users").Find(MatchAny("shortName", toQuery...))
-		// log.Println("users: ", toQuery)
-
 		var matchingUsers []User
-		usersQuery.All(&matchingUsers)
+		err := db.C("users").Find(MatchAny("shortName", toQuery...)).All(&matchingUsers)
+		if err != nil {
+			log.Printf("Error querying users: %q -- us:%q", err, toQuery)
+		}
+
 		for _, user := range matchingUsers {
 			for _, nextUser := range user.CanBeReally {
 				if !isSeen(nextUser) {
@@ -113,6 +121,60 @@ func allKeysFromUsernames(db *mgo.Database, usernames []string) []string {
 	return allKeys
 }
 
+// Get usernames of all staff
+func getStaff(db *mgo.Database) []string {
+	usersQ := db.C("users").Find(map[string]bool{"isStaff": true})
+
+	var matchingUsers []User
+	usersQ.All(&matchingUsers)
+
+	users := []string{}
+	for _, u := range matchingUsers {
+		users = append(users, u.ShortName)
+	}
+
+	return users
+}
+
+// Merge two lists keeping only the uniques
+func combineUsers(a, b []string) []string {
+	both := append(a, b...)
+
+	allowedUsers := map[string]struct{}{}
+	for _, u := range both {
+		allowedUsers[u] = struct{}{}
+	}
+
+	combined := []string{}
+	for u := range allowedUsers {
+		combined = append(combined, u)
+	}
+	return combined
+}
+
+// Get the list of all SSH keys allowed to access a box.
+func getKeys(db *mgo.Database, boxname string) (boxUsers, usernames []string, keys string) {
+
+	staff := getStaff(db)
+	boxUsers = usersFromBox(db, boxname)
+
+	usernames = combineUsers(staff, boxUsers) // returned
+
+	// Looks through `canBeReally`.
+	keySlice := allKeysFromUsernames(db, usernames)
+
+	for _, k := range keySlice {
+		k = strings.Replace(k, "\n", "", -1)
+		if !strings.HasPrefix(k, "ssh-") && !strings.HasPrefix(k, "#") {
+			keys += "# NOT VAILD: "
+		}
+		keys += k + "\n"
+	}
+
+	return
+}
+
+// Serve sshkeys at http://:33845/{boxname}
 func main() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -122,27 +184,15 @@ func main() {
 
 	db := GetDatabase()
 
-	usernames := usersFromBox(db, os.Args[1])
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		u := r.URL.Path[1:]
+		boxUsers, allUsers, keys := getKeys(db, u)
 
-	// Looks through canBeReally
-	keys := allKeysFromUsernames(db, usernames)
+		log.Printf("%s:%v:%q:%q", u, strings.Count(keys, "\n"), boxUsers, allUsers)
+		fmt.Fprint(w, keys)
+	})
 
-	for _, k := range keys {
-		k = strings.Replace(k, "\n", "", -1)
-		if !strings.HasPrefix(k, "ssh-") && !strings.HasPrefix(k, "#") {
-			println("# NOT VAILD: ", k)
-			continue
-		}
-		println(k)
-	}
-
-	// log.Println("Users: ", users)
-
-	// us := db.C("users").Find(MatchAny("shortName", users...))
-
-	// var matchingUsers []User
-	// err := us.All(&matchingUsers)
-	// check(err)
-
-	// log.Printf("%#+v %v", matchingUsers, err)
+	log.Println("Serving..")
+	err := http.ListenAndServe("localhost:33845", nil)
+	check(err)
 }
