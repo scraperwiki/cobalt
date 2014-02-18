@@ -12,7 +12,6 @@
     "bcrypt": "~0.7.3",
     "nibbler": "git://github.com/mattrobenolt/node_nibbler.git",
     "ident-express": "~0.0.2",
-    "nodetime": "~0.8.12",
     "redis": "~0.8.4",
     "hiredis": "~0.1.15",
     "throttler-express": "git+https://github.com/scraperwiki/throttler-express.git"
