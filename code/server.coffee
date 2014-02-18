@@ -3,11 +3,6 @@
 # serv.coffee
 # http server for cobalt.
 
-nodetime = require 'nodetime'
-nodetime.profile
-  accountKey: process.env.NODETIME_KEY
-  appName: "#{process.env.CO_NODETIME_APP} #{require('os').hostname()}"
-
 {exec}  = require 'child_process'
 fs      = require 'fs'
 path    = require 'path'
@@ -55,27 +50,11 @@ User = require 'models/user'
 
 app = express()
 
-# TODO: move into npm module
-nodetimeLog = (req, res, next) ->
-  matched = _.find app.routes[req.method.toLowerCase()], (route) ->
-    if route.regexp.test req.url
-      if route.path isnt '*'
-        return true
-  if matched?
-    name = "#{req.method} #{matched.path}"
-    res.nodetimePromise = nodetime.time 'Cobalt request ', name, req.url
-    oldSend = res.send
-    res.send = (args... ) ->
-      res.nodetimePromise.end()
-      oldSend.apply res, args
-  return next()
-
 # Trust the headers from nginx and change req.ip to the real IP
 # of the connecting dude.
 app.set "trust proxy", true
 
 app.use express.bodyParser()
-app.use nodetimeLog
 
 app.configure 'staging', ->
   app.use express.logger()
