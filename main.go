@@ -75,7 +75,7 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 					cd /home/tool/cgi-bin && /home/tool/cgi-bin/"$P"/default
 					exit 0
 				fi
-				if [ "$P" == "." ]; then
+				if [ "$P" = "." ]; then
 					break
 				fi
 				P="$(dirname "$P")"
