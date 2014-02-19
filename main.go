@@ -55,12 +55,36 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// This setup prevents shell injection.
 	// Try first /home/cgi-bin, then /home/tool/cgi-bin
 	code := `
-		if [ -x /home/cgi-bin/"$1" ]; then
+		if [ -x /home/cgi-bin/"$1" ] && [ ! -d /home/cgi-bin/"$1" ]; then
 			cd /home/cgi-bin && /home/cgi-bin/"$1"
-		elif [ -x /home/tool/cgi-bin/"$1" ]; then
+		elif [ -x /home/tool/cgi-bin/"$1" ] && [ ! -d /home/tool/cgi-bin/"$1" ]; then
 			cd /home/tool/cgi-bin && /home/tool/cgi-bin/"$1"
 		else
+			P="$1"
+
+			while :
+			do
+				# echo "Searching for $P/default"
+				if [ -x "/home/cgi-bin/$P/default" ]; then
+					# echo Found $P/default
+					cd /home/cgi-bin && /home/cgi-bin/"$P"/default
+					exit 0
+				fi
+				if [ -x "/home/tool/cgi-bin/$P/default" ]; then
+					# echo Found $P/default
+					cd /home/tool/cgi-bin && /home/tool/cgi-bin/"$P"/default
+					exit 0
+				fi
+				if [ "$P" == "." ]; then
+					break
+				fi
+				P="$(dirname "$P")"
+
+			done
+
 			echo Status: 404 Not Found
+			echo
+			echo 404 Not Found
 		fi
 	`
 	cgiargs := []string{"-c", code, user[0], "--", "-", filepath}
