@@ -2,28 +2,26 @@
 
 # Default username
 
+PASSWD_DIR=${CO_STORAGE_DIR}/var/lib/extrausers
+
 create_user() {
   USERNAME="$1"
   UID="$2"
 
   # Create the user
-  gid=$(awk -F: '/^databox:/{print $3}' /etc/group)
+  gid=$(awk -F: '/^databox:/{print $3}' ${PASSWD_DIR}/group)
   passwd_row="${USERNAME}:x:${UID}:${gid}::/home:/bin/bash"
   shadow_row="${USERNAME}:x:15607:0:99999:7:::"
   (
     flock -w 10 9 || exit 99
-    { cat ${CO_STORAGE_DIR}/etc/passwd ; echo "$passwd_row" ; } > ${CO_STORAGE_DIR}/etc/passwd+
-    mv ${CO_STORAGE_DIR}/etc/passwd+ ${CO_STORAGE_DIR}/etc/passwd
+    { cat ${PASSWD_DIR}/passwd ; echo "$passwd_row" ; } > ${PASSWD_DIR}/passwd+
+    mv ${PASSWD_DIR}/passwd+ ${PASSWD_DIR}/passwd
 
-    cat ${CO_STORAGE_DIR}/etc/passwd > /opt/basejail/etc/passwd+
-    mv /opt/basejail/etc/passwd+ /opt/basejail/etc/passwd
 
-    { cat ${CO_STORAGE_DIR}/etc/shadow ; echo "$shadow_row" ; } > ${CO_STORAGE_DIR}/etc/shadow+
-    mv ${CO_STORAGE_DIR}/etc/shadow+ ${CO_STORAGE_DIR}/etc/shadow
+    { cat ${PASSWD_DIR}/shadow ; echo "$shadow_row" ; } > ${PASSWD_DIR}/shadow+
+    mv ${PASSWD_DIR}/shadow+ ${PASSWD_DIR}/shadow
 
-    cat /etc/group > /opt/basejail/etc/group+
-    mv /opt/basejail/etc/group+ /opt/basejail/etc/group
-   ) 9>${CO_STORAGE_DIR}/etc/passwd.cobalt.lock
+   ) 9>${PASSWD_DIR}/passwd.cobalt.lock
 }
 
 delete_user() {

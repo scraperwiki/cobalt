@@ -8,9 +8,9 @@ setup() {
 }
 
 runtests() {
-  assert 'pbunyan is in /etc/passwd' [ "`grep -c ^pbunyan: /etc/passwd`" = '1' ]
+  assert 'pbunyan is in /var/lib/extrausers/passwd' [ "`grep -c ^pbunyan: /var/lib/extrausers/passwd`" = '1' ]
   assert 'pbunyan is in the databox group' [ "`groups pbunyan|grep -c \ databox$`" = '1' ]
-  assert "pbunyan's shell is bash" [ "`grep -c ^pbunyan.*/bin/bash$ /etc/passwd`" = '1' ]
+  assert "pbunyan's shell is bash" [ "`grep -c ^pbunyan.*/bin/bash$ /var/lib/extrausers/passwd`" = '1' ]
 }
 
 teardown() {
