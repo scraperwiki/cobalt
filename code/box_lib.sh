@@ -2,14 +2,14 @@
 
 # Default username
 
-PASSWD_DIR=${CO_STORAGE_DIR}/var/lib/extrausers
+PASSWD_DIR=/var/lib/extrausers
 
 create_user() {
   USERNAME="$1"
   UID="$2"
 
   # Create the user
-  gid=$(awk -F: '/^databox:/{print $3}' ${PASSWD_DIR}/group)
+  gid=$(awk -F: '/^databox:/{print $3}' /etc/group)
   passwd_row="${USERNAME}:x:${UID}:${gid}::/home:/bin/bash"
   shadow_row="${USERNAME}:x:15607:0:99999:7:::"
   (
@@ -40,8 +40,6 @@ create_user_directories() {
 
   # Users owns her home.
   chown -R "$USERNAME:" "${CO_STORAGE_DIR}/home/${USERNAME}"
-
-  mkdir -p "${CO_STORAGE_DIR}/sshkeys/${USERNAME}"
 }
 
 
