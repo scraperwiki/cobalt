@@ -10,8 +10,6 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-var dbName = flag.String("dbName", "cu-live-eu", "db to query for")
-
 type Box struct {
 	Name    string `bson:"name"`
 	BoxJSON struct {
@@ -30,7 +28,7 @@ func GetDatabase() *mgo.Database {
 	session, err := mgo.Dial(db_host)
 	check(err)
 
-	return session.DB(*dbName)
+	return session.DB("")
 }
 
 func main() {
