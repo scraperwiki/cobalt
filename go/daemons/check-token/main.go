@@ -47,7 +47,7 @@ func main() {
 
 			if err != nil {
 				if session != nil {
-					session.Clone()
+					session.Close()
 					session = nil
 				}
 				log.Printf("Database connection failed (%q), retrying..", err)
