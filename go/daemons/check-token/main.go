@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -23,13 +26,15 @@ func check(err error) {
 	}
 }
 
-func GetDatabase() *mgo.Database {
+func GetDatabase() *mgo.Session {
 	db_host := os.Getenv("CU_DB")
 	session, err := mgo.Dial(db_host)
 	check(err)
 
-	return session.DB("")
+	return session
 }
+
+var ErrDbTimeout = errors.New("db took too long")
 
 func main() {
 	flag.Parse()
@@ -39,9 +44,14 @@ func main() {
 		}
 	}()
 
-	db := GetDatabase()
+	session := GetDatabase()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		this_session := session.Copy()
+		defer func() { go this_session.Close() }()
+
+		db := this_session.DB("")
+
 		// Query boxes
 		splitted := strings.SplitN(r.URL.Path[1:], "/", 2)
 		if len(splitted) < 2 {
@@ -53,9 +63,28 @@ func main() {
 				bson.M{"name": splitted[0]},
 				bson.M{"boxJSON.publish_token": splitted[1]}}}
 
-		n, err := db.C("boxes").Find(validTokenQuery).Count()
-		check(err)
+		err := ErrDbTimeout
+		var n int
+		done := make(chan struct{})
+
+		go func() {
+			n, err = db.C("boxes").Find(validTokenQuery).Count()
+			close(done)
+		}()
+
+		select {
+		case <-time.After(5 * time.Second):
+		case <-done:
+		}
+
+		if err != nil {
+			log.Printf("%v StatusServiceUnavailable %q", splitted[0], err)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		if n == 0 {
+			log.Printf("%v StatusForbidden", splitted[0])
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
