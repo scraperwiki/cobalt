@@ -26,14 +26,6 @@ func check(err error) {
 	}
 }
 
-func GetDatabase() *mgo.Session {
-	db_host := os.Getenv("CU_DB")
-	session, err := mgo.Dial(db_host)
-	check(err)
-
-	return session
-}
-
 var ErrDbTimeout = errors.New("db took too long")
 
 func main() {
@@ -44,13 +36,28 @@ func main() {
 		}
 	}()
 
-	session := GetDatabase()
+	var session *mgo.Session
+	var err error
+
+	go func() {
+		for session == nil {
+			log.Println("Connecting to mongo..")
+
+			session, err = mgo.Dial(os.Getenv("CU_DB"))
+
+			if err != nil {
+				if session != nil {
+					session.Clone()
+					session = nil
+				}
+				log.Printf("Database connection failed (%q), retrying..", err)
+				time.Sleep(10 * time.Second)
+			}
+		}
+		log.Println("Connected to mongo.")
+	}()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		this_session := session.Copy()
-		defer func() { go this_session.Close() }()
-
-		db := this_session.DB("")
 
 		// Query boxes
 		splitted := strings.SplitN(r.URL.Path[1:], "/", 2)
@@ -58,6 +65,13 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		if session == nil {
+			log.Printf("%v StatusServiceUnavailable session == nil", splitted[0])
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		validTokenQuery := bson.M{
 			"$and": []bson.M{
 				bson.M{"name": splitted[0]},
@@ -68,6 +82,11 @@ func main() {
 		done := make(chan struct{})
 
 		go func() {
+			this_session := session.Copy()
+			defer this_session.Close()
+
+			db := this_session.DB("")
+
 			n, err = db.C("boxes").Find(validTokenQuery).Count()
 			close(done)
 		}()
@@ -92,7 +111,7 @@ func main() {
 	})
 
 	println("Listening...")
-	err := http.ListenAndServe(":23423", nil)
+	err = http.ListenAndServe(":23423", nil)
 	check(err)
 
 }
