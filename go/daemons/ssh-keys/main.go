@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )
+
+var address = flag.String("address", "localhost:33845", "address to listen on")
 
 type Dataset struct {
 	CreatorDisplayName string `bson:"creatorDisplayName"`
@@ -78,6 +81,14 @@ func usersFromBox(db *mgo.Database, boxName string) (users []string) {
 	return users
 }
 
+func prefixEnvironment(user string, keys []string) []string {
+	result := []string{}
+	for _, key := range keys {
+		result = append(result, fmt.Sprintf("environment=\"SCRAPERWIKI_USER=%s\" %s", user, key))
+	}
+	return result
+}
+
 // Looking through canBeReally, find all SSH keys for all `usernames`.
 // Makes as many queries as necessary according to the depth of the canBeReally
 // tree, pruning duplicates.
@@ -114,7 +125,8 @@ func allKeysFromUsernames(db *mgo.Database, usernames []string) []string {
 				}
 			}
 			allKeys = append(allKeys, fmt.Sprintf("# From user:%s", user.ShortName))
-			allKeys = append(allKeys, user.SshKeys...)
+			keys := prefixEnvironment(user.ShortName, user.SshKeys)
+			allKeys = append(allKeys, keys...)
 		}
 	}
 
@@ -176,6 +188,8 @@ func getKeys(db *mgo.Database, boxname string) (boxUsers, usernames []string, ke
 
 // Serve sshkeys at http://:33845/{boxname}
 func main() {
+	flag.Parse()
+
 	defer func() {
 		if err := recover(); err != nil {
 			panic(err)
@@ -192,7 +206,7 @@ func main() {
 		fmt.Fprint(w, keys)
 	})
 
-	log.Println("Serving..")
-	err := http.ListenAndServe("localhost:33845", nil)
+	log.Println("Serving at", *address)
+	err := http.ListenAndServe(*address, nil)
 	check(err)
 }
