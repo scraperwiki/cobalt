@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -38,14 +39,6 @@ func check(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func GetDatabase() *mgo.Database {
-	db_host := os.Getenv("CU_DB")
-	session, err := mgo.Dial(db_host)
-	check(err)
-
-	return session.DB("cu-live-eu")
 }
 
 func MatchAny(what string, values ...string) bson.M {
@@ -153,7 +146,12 @@ func combineUsers(a, b []string) []string {
 }
 
 // Get the list of all SSH keys allowed to access a box.
-func getKeys(db *mgo.Database, boxname string) (boxUsers, usernames []string, keys string) {
+func getKeys(session *mgo.Session, boxname string) (boxUsers, usernames []string, keys string) {
+
+	this_session := session.Clone()
+	defer this_session.Close()
+
+	db := this_session.DB("")
 
 	staff := getStaff(db)
 	boxUsers = usersFromBox(db, boxname)
@@ -182,17 +180,42 @@ func main() {
 		}
 	}()
 
-	db := GetDatabase()
+	var session *mgo.Session
+	var err error
+
+	go func() {
+		for session == nil {
+			log.Println("Connecting to mongo..")
+
+			session, err = mgo.Dial(os.Getenv("CU_DB"))
+
+			if err != nil {
+				if session != nil {
+					session.Close()
+					session = nil
+				}
+				log.Printf("Database connection failed (%q), retrying..", err)
+				time.Sleep(10 * time.Second)
+			}
+		}
+		log.Println("Connected to mongo.")
+	}()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		u := r.URL.Path[1:]
-		boxUsers, allUsers, keys := getKeys(db, u)
+		if session == nil {
+			log.Printf("%v StatusServiceUnavailable session == nil", u)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		boxUsers, allUsers, keys := getKeys(session, u)
 
 		log.Printf("%s:%v:%q:%q", u, strings.Count(keys, "\n"), boxUsers, allUsers)
 		fmt.Fprint(w, keys)
 	})
 
 	log.Println("Serving..")
-	err := http.ListenAndServe("localhost:33845", nil)
+	err = http.ListenAndServe("localhost:33845", nil)
 	check(err)
 }
