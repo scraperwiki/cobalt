@@ -50,6 +50,7 @@ func AppendFile(filename, content string) error {
 	if err != nil {
 		return err
 	}
+	defer fd.Close()
 
 	n, err := fd.WriteString(content)
 	if n != len(content) {
