@@ -62,6 +62,9 @@ func main() {
 			panic(err)
 		}
 	}()
+	if *boxName == "" {
+		log.Fatal("boxName required")
+	}
 
 	db := GetDatabase()
 
