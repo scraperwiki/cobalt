@@ -8,6 +8,7 @@ import (
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"github.com/dchest/safefile"
 )
 
 var boxName = flag.String("boxName", "", "boxServer to generate for")
@@ -102,19 +103,24 @@ func main() {
 		goodBoxes = append(goodBoxes, box)
 	}
 
-	passwd, err := os.Create("passwd")
+	passwd, err := safefile.Create("passwd", 0666)
 	check(err)
 	defer passwd.Close()
 	for _, box := range boxes {
 		fmt.Fprintf(passwd, "%v:x:%v:10000::/home:/bin/bash\n", box.Name, box.Uid)
 	}
 
-	shadow, err := os.Create("shadow")
+	shadow, err := safefile.Create("shadow", 0666)
 	check(err)
 	defer shadow.Close()
 	for _, box := range boxes {
 		fmt.Fprintf(shadow, "%v:x:15607:0:99999:7:::\n", box.Name)
 	}
+
+	err = passwd.Commit()
+	check(err)
+	err = shadow.Commit()
+	check(err)
 
 	log.Printf("Generated len(%v) passwd file (%v deleted)", len(goodBoxes), len(boxes)-len(goodBoxes))
 }
