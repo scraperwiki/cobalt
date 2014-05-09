@@ -49,6 +49,9 @@ func check(err error) {
 
 func GetDatabase() *mgo.Database {
 	db_host := os.Getenv("CU_DB")
+	if db_host == "" {
+		log.Fatal("CU_DB environment variable required")
+	}
 	session, err := mgo.Dial(db_host)
 	check(err)
 
@@ -63,7 +66,7 @@ func main() {
 		}
 	}()
 	if *boxName == "" {
-		log.Fatal("boxName required")
+		log.Fatal("boxName parameter required")
 	}
 
 	db := GetDatabase()
