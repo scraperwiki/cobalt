@@ -245,8 +245,8 @@ app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, requireAuth
       console.tick "added unix user #{boxname}"
       any_stderr = stderr is not ''
       console.log "Error adding user: #{err} #{stderr}" if err? or any_stderr
-      return res.send {error: "Unable to create box"} if err? or any_stderr
-      return res.send stdout
+      return res.send 500, {error: "Unable to create box"} if err? or any_stderr
+      return res.send {"status": "ok"}
 
 # Add an SSH key to a box
 app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, requireAuth, (req, res) ->
@@ -309,8 +309,6 @@ exports.unix_user_add = (user_name, uid, callback) ->
         . ./code/box_lib.sh &&
         create_user #{user_name} #{uid} &&
         create_user_directories #{user_name}
-        sh ./code/templates/box.json.template | tee #{homeDir}/#{user_name}/box.json
-        chown #{user_name}:databox #{homeDir}/#{user_name}/box.json
         """
   # insecure - sanitise user_name
   console.log cmd
