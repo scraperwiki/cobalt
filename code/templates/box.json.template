@@ -1,6 +1,0 @@
-cat <<EOF
-{
-  "database"      : "scraperwiki.sqlite",
-  "publish_token" : "$(uuidgen | tr -d - | cut -c-15)"
-}
-EOF
