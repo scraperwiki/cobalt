@@ -208,7 +208,7 @@ app.post "/:boxname/exec/?", maxInFlightMiddleware(5), check_api_and_box, (req, 
 
 myCheckIdent = (req, res, next) ->
   # ScraperWiki office / localhost
-  if req.ip in [liverpool_office_ip, "127.0.0.1"]
+  if req.ip in [liverpool_office_ip, "10.0.0.10", "127.0.0.1"]
     req.ident = 'root'
     next()
   else
