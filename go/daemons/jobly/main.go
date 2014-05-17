@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"os"
-	// "os/exec"
+	"syscall"
 	"time"
 
-	// "github.com/fzzy/radix/redis"
 	redis "github.com/xuyu/goredis"
 )
 
@@ -45,6 +45,7 @@ func RunUpdateHook(box string) {
 	select {
 	case <-done:
 		return
+
 	case <-time.After(TIMEOUT):
 		cancelled = true
 		log.Println("  Cancelled ", box)
@@ -115,6 +116,18 @@ func main() {
 
 	url := os.ExpandEnv("tcp://auth:${REDIS_PASSWORD}@${REDIS_SERVER}:6379/0?timeout=10s&maxidle=1")
 	client, err := redis.DialURL(url)
+
+	switch err := err.(type) {
+	case *net.OpError:
+		if err.Err.Error() == "connection refused" {
+			log.Fatal("Connection refused. Aborting.")
+		}
+	}
+	// if syscall.ECONNREFUSED.
+
+	e := err.(*net.OpError).Err.(syscall.Errno)
+	log.Println("conn:", e.Temporary(), e.Timeout(), e.Error())
+
 	check(err)
 
 	workQ := make(chan string, 100)
