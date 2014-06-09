@@ -57,6 +57,7 @@ type Handler struct {
 	InheritEnv []string    // environment variables to inherit from host, as "key"
 	Logger     *log.Logger // optional log for errors or nil to use log.Print
 	Args       []string    // optional arguments to pass to child process
+	Stderr     io.Writer   // optional place to send stderr of process to (default: os.Stderr)
 
 	// PathLocationHandler specifies the root http Handler that
 	// should handle internal redirects when the CGI process
@@ -193,12 +194,17 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		h.printf("CGI error: %v", err)
 	}
 
+	stderr := h.Stderr
+	if stderr == nil {
+		stderr = os.Stderr
+	}
+
 	cmd := &exec.Cmd{
 		Path:   path,
 		Args:   append([]string{h.Path}, h.Args...),
 		Dir:    cwd,
 		Env:    env,
-		Stderr: os.Stderr, // for now
+		Stderr: stderr,
 	}
 	if req.ContentLength != 0 {
 		cmd.Stdin = req.Body
@@ -307,6 +313,16 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	rw.WriteHeader(statusCode)
 
+	log.Println("Here in CGI")
+	go func() {
+		// log.Printf("Waiting for closenotify ", rw)
+		<-rw.(http.CloseNotifier).CloseNotify()
+		log.Println("CloseNotify() ", err)
+		// stdoutRead.Close()
+		cmd.Process.Signal(os.Kill)
+		// cmd.Stdin.Clos
+	}()
+
 	_, err = io.Copy(rw, linebody)
 	if err != nil {
 		h.printf("cgi: copy error: %v", err)
@@ -318,6 +334,7 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		// won't be reused until the Wait above).
 		cmd.Process.Kill()
 	}
+	log.Println("Closed")
 }
 
 func (h *Handler) printf(format string, v ...interface{}) {
