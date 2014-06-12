@@ -23,11 +23,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 )
+
+func GetFd(l interface{}) uintptr {
+	v := reflect.ValueOf(l).Elem().FieldByName("fd")
+	return uintptr(v.Int())
+}
 
 var trailingPort = regexp.MustCompile(`:([0-9]+)$`)
 
@@ -206,6 +213,9 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		Env:    env,
 		Stderr: stderr,
 	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true,
+	}
 	if req.ContentLength != 0 {
 		cmd.Stdin = req.Body
 	}
@@ -319,7 +329,18 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		<-rw.(http.CloseNotifier).CloseNotify()
 		log.Println("CloseNotify() ", err)
 		// stdoutRead.Close()
-		cmd.Process.Signal(os.Kill)
+		// cmd.Process.Signal(os.Kill)
+		// fd := GetFd(stdoutRead)
+		// log.Printf("Arg = %T %v", stdoutRead, stdoutRead, fd)
+		// syscall.Close(int(fd))
+		// log.Println("Closed!")
+		pgrp := &os.Process{Pid: -cmd.Process.Pid}
+		err := pgrp.Signal(os.Kill)
+		log.Println("SIGNAL ERROR:", err)
+		// pgrp
+		// pgrp.
+		// os.Signal
+		// cmd.Process.Pid
 		// cmd.Stdin.Clos
 	}()
 
