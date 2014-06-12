@@ -184,11 +184,17 @@ func Listen(host, port string) (l net.Listener, err error) {
 
 func main() {
 
+	log.Println("COBALT_HOME =", cobaltHome)
+	log.Println("COBALT_BOX_HOME =", boxHome)
+	log.Println("COBALT_GLOBAL_CGI =", globalCGI)
+
 	l, err := Listen(os.Getenv("HOST"), os.Getenv("PORT"))
 	if err != nil {
 		log.Fatalln("Error listening:", err)
 	}
 	defer l.Close()
+
+	log.Printf("Listening on %s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
 
 	router := mux.NewRouter()
 
