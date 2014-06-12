@@ -38,50 +38,64 @@ func init() {
 }
 
 // This setup prevents shell injection.
-// Try first /home/cgi-bin, then /home/tool/cgi-bin
 const code = `
 	set -x
+
+	# This code runs inside a chroot in production environments.
+
+	# Try to invoke the specified CGI script if it exists, is executable,
+	# is not a directory. On success, exit this shell script immediately.
+
 	try_invoke() {
-		local dir="$1"
-		local bin="$2"
-		local fullpath="${dir}/${bin}"
+		local base="$1"
+		local dir="$2"
+		local bin="$3"
+
+		# Path with respect to http
+		local uri="${dir}/${bin}"
+
+		# Path on disk (inside chroot)
+		local fullpath="${base}${uri}"
+
 		if [ -x "${fullpath}" ] && [ ! -d "${fullpath}" ]; then
-			cd "${dir}" && SCRIPT_PATH="${fullpath}" exec "${fullpath}"
+			cd "${base}/${dir}" && SCRIPT_NAME="${URI_BASE}${uri}" SCRIPT_PATH="${fullpath}" exec "${fullpath}"
 			exit
 		fi
 	}
 
-	# TODO(pwaller): set SCRIPT_FILENAME correctly
-	#invoke() {
-		#SCRIPT_FILENAME="$1" "$1"
-	#}
-	# printf ".%s.\n" "$@" 1>&2
-	# echo "$@"
+	try_cgi() {
+		local base="$1"
+		local dir="$2"
+		local target="$3"
 
-	try_invoke "${COBALT_BOX_HOME}/cgi-bin" "$1"
-	try_invoke "${COBALT_BOX_HOME}/tool/cgi-bin" "$1"
-	try_invoke "${COBALT_GLOBAL_CGI}/" "$1"
+		try_invoke "${base}" "${dir}" "${target}"
 
-	P="$1"
+		local test_path="${target}"
 
-	while :
-	do
-		try_invoke "${COBALT_BOX_HOME}/cgi-bin" "${P}/default"
-		try_invoke "${COBALT_BOX_HOME}/tool/cgi-bin" "${P}/default"
-		# if [ -x "${COBALT_BOX_HOME}/cgi-bin/$P/default" ]; then
-		# 	cd ${COBALT_BOX_HOME}/cgi-bin && ${COBALT_BOX_HOME}/cgi-bin/"$P"/default
-		# 	exit 0
-		# fi
-		# if [ -x "${COBALT_BOX_HOME}/tool/cgi-bin/$P/default" ]; then
-		# 	cd ${COBALT_BOX_HOME}/tool/cgi-bin && ${COBALT_BOX_HOME}/tool/cgi-bin/"$P"/default
-		# 	exit 0
-		# fi
-		if [ "$P" = "." ]; then
-			break
-		fi
-		P="$(dirname "$P")"
+		# Progressively strip basename from ${test_path}, searching for a
+		# .../default script that can be invoked.
+		while :
+		do
+			try_invoke "${base}" "${dir}" "${test_path}/default"
 
-	done
+			if [ "${test_path}" = "." ]; then
+				break
+			fi
+			local test_path="$(dirname "${test_path}")"
+		done
+	}
+
+	# Try user's /home/cgi-bin, then user's /home/tool/cgi-bin, then
+	# finally the global ${COBALT_GLOBAL_CGI}/cgi-bin.
+
+	# For each case, first try directly invoking it, then try and see if
+	# a ./default script inside a directory should be ran.
+
+	# The first hit to succeed causes this script to immediately exit.
+
+	try_cgi "${COBALT_BOX_HOME}" "/cgi-bin" "$1"
+	try_cgi "${COBALT_BOX_HOME}" "/tool/cgi-bin" "$1"
+	try_cgi "${COBALT_GLOBAL_CGI}" "/cgi-bin" "$1"
 
 	echo Status: 404 Not Found
 	echo Content-Type: text/plain
@@ -145,9 +159,10 @@ func HandleCGI(w http.ResponseWriter, r *http.Request) {
 		Path: cgipath,
 		Args: cgiargs,
 		Env: []string{
-			// "SCRIPT_FILENAME=" + "/home/cgi-bin/" + target,
+			fmt.Sprint("URI_BASE=/", vars["box"], "/", vars["publishToken"]),
 			"SERVER_SOFTWARE=github.com/scraperwiki/cobalt/go/daemons/cgi-endpoint",
 			"COBALT_BOX_HOME=" + boxHome,
+			"COBALT_GLOBAL_CGI=" + globalCGI,
 		}}
 
 	handler.ServeHTTP(w, r)
