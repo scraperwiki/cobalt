@@ -236,6 +236,22 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer cmd.Wait()
 	defer stdoutRead.Close()
 
+	completed := make(chan struct{})
+	defer close(completed)
+
+	go func() {
+		<-rw.(http.CloseNotifier).CloseNotify()
+
+		select {
+		default:
+			pgrp := &os.Process{Pid: -cmd.Process.Pid}
+			err := pgrp.Signal(os.Kill)
+			log.Println("Sent KILL to pgrp:", err)
+		case <-completed:
+			log.Println("Process completed")
+		}
+	}()
+
 	linebody := bufio.NewReaderSize(stdoutRead, 1024)
 	headers := make(http.Header)
 	statusCode := 0
@@ -323,27 +339,6 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	rw.WriteHeader(statusCode)
 
-	log.Println("Here in CGI")
-	go func() {
-		// log.Printf("Waiting for closenotify ", rw)
-		<-rw.(http.CloseNotifier).CloseNotify()
-		log.Println("CloseNotify() ", err)
-		// stdoutRead.Close()
-		// cmd.Process.Signal(os.Kill)
-		// fd := GetFd(stdoutRead)
-		// log.Printf("Arg = %T %v", stdoutRead, stdoutRead, fd)
-		// syscall.Close(int(fd))
-		// log.Println("Closed!")
-		pgrp := &os.Process{Pid: -cmd.Process.Pid}
-		err := pgrp.Signal(os.Kill)
-		log.Println("SIGNAL ERROR:", err)
-		// pgrp
-		// pgrp.
-		// os.Signal
-		// cmd.Process.Pid
-		// cmd.Stdin.Clos
-	}()
-
 	_, err = io.Copy(rw, linebody)
 	if err != nil {
 		h.printf("cgi: copy error: %v", err)
@@ -355,7 +350,6 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		// won't be reused until the Wait above).
 		cmd.Process.Kill()
 	}
-	log.Println("Closed")
 }
 
 func (h *Handler) printf(format string, v ...interface{}) {
