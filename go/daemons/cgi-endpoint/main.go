@@ -102,7 +102,7 @@ func FindCgiScript(user, target string) (fullpath, uri string, ok bool) {
 		if ok {
 			return target, true
 		}
-		for target != "." {
+		for target != "/" {
 			uri := path.Join(target, "default")
 			ok = Exists(path.Join(root, uri))
 			if ok {
@@ -122,9 +122,9 @@ func FindCgiScript(user, target string) (fullpath, uri string, ok bool) {
 	}
 
 	for _, root := range roots {
-		uri, ok := lookForScript(root.base, path.Join(root.place, target))
+		uri, ok := lookForScript(path.Join(root.base, root.place), target)
 		if ok {
-			return path.Join(root.base, uri), uri, ok
+			return path.Join(root.base, root.place, uri), uri, ok
 		}
 	}
 
