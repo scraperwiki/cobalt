@@ -141,7 +141,7 @@ func HandleCGI(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	log.Printf("%v = FindCgiScript(%v) -> %v", ok, target, scriptPath)
+	// log.Printf("%v = FindCgiScript(%v) -> %v", ok, target, scriptPath)
 
 	var cgipath = ""
 	var cgiargs = []string{}
@@ -206,16 +206,34 @@ func Listen(host, port string) (l net.Listener, err error) {
 	return
 }
 
+func tokenVerifier(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	vars := mux.Vars(r)
+	// TODO(pwaller): Reject connection based on contents of vars
+	_ = vars
+	next(rw, r)
+}
+
+// Wrap the given handler with a token verifier
+func WrapTokenVerifier(handler http.Handler) http.Handler {
+
+	middleware := negroni.New()
+	middleware.Use(negroni.HandlerFunc(tokenVerifier))
+	middleware.UseHandler(handler)
+
+	top := mux.NewRouter()
+	top.PathPrefix("/{box}/{publishToken}/").Handler(middleware)
+
+	return top
+}
+
 func NewHandler() http.Handler {
-	router := mux.NewRouter()
 
-	box := router.PathPrefix("/{box}/{publishToken}/").Subrouter()
-
+	box := mux.NewRouter().PathPrefix("/{box}/{publishToken}/").Subrouter()
 	box.PathPrefix("/cgi-bin/").HandlerFunc(HandleCGI)
 	box.PathPrefix("/http/").HandlerFunc(HandleHTTP)
 
 	n := negroni.Classic()
-	n.UseHandler(router)
+	n.UseHandler(WrapTokenVerifier(box))
 
 	return n
 }
