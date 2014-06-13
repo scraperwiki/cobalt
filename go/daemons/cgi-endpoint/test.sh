@@ -6,20 +6,16 @@ echo "-- DATE:"
 curl localhost:3000/a/token/cgi-bin/date.sh
 echo
 
-echo "-- foo -> default:"
-curl localhost:3000/a/token/cgi-bin/foo
+echo "-- /home-dir -> /home-dir/default:"
+curl localhost:3000/a/token/cgi-bin/home-dir
 echo
 
-echo "-- foo/bar -> default:"
-curl localhost:3000/a/token/cgi-bin/foo/bar
+echo "-- /home-dir/foo/bar -> /home-dir/default:"
+curl localhost:3000/a/token/cgi-bin/home-dir/foo/bar
 echo
 
-echo "-- foo/bar/baz -> default:"
-curl localhost:3000/a/token/cgi-bin/foo/bar/bax?qux
-echo
-
-echo "-- post 'HELLO' foo/bar -> default:"
-curl -d 'HELLO' localhost:3000/a/token/cgi-bin/foo/bar
+echo "-- POST /home-dir/foo/bar -> /home-dir/default:"
+curl -d 'HELLO' localhost:3000/a/token/cgi-bin/home-dir/foo/bar
 echo
 
 echo "-- /cgi-bin/tool-script (finds /home/tool/cgi-bin/tool-script)"

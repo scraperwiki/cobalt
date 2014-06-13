@@ -4,10 +4,5 @@ echo Status: 200 OK
 echo Content-Type: text/plain
 echo
 
-echo Executing: $0
 echo SCRIPT_PATH=$SCRIPT_PATH
 echo SCRIPT_NAME=$SCRIPT_NAME
-echo PATH_INFO=$PATH_INFO
-echo REQUEST_URI=$REQUEST_URI
-
-echo PAYLOAD: $(cat)
