@@ -6,11 +6,12 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"time"
 
+	// We use our own fork to get the connection termination behaviour
+	// we need.
 	// "net/http/cgi"
 	"github.com/scraperwiki/cobalt/go/daemons/cgi-endpoint/go/cgi"
 
@@ -20,9 +21,10 @@ import (
 )
 
 var (
-	cobaltHome = "/var/lib/cobalt/home" // Location of boxes outside chroot
-	boxHome    = "/home"                // Location of $HOME inside one chroot
-	globalCGI  = "/tools/global-cgi"    // Location of global CGI scripts
+	cobaltHome   = "/var/lib/cobalt/home" // Location of boxes outside chroot
+	boxHome      = "/home"                // Location of $HOME inside one chroot
+	globalCGI    = "/tools/global-cgi"    // Location of global CGI scripts
+	inProduction = false                  // Running in production
 )
 
 func init() {
@@ -35,11 +37,19 @@ func init() {
 	if os.Getenv("COBALT_GLOBAL_CGI") != "" {
 		globalCGI = os.Getenv("COBALT_GLOBAL_CGI")
 	}
+
+	inProduction = os.Getenv("SCRAPERWIKI_ENV") == "production"
 }
 
 // This setup prevents shell injection.
 const code = `
-	set -x
+	# set -x
+
+	# Children don't inherit these.
+	declare +x COBALT_HOME COBALT_BOX_HOME COBALT_GLOBAL_CGI SCRAPERWIKI_ENV
+
+	# Intentionally inherited in case anyone wants to know.
+	declare -x COBALT_URI_BASE
 
 	# This code runs inside a chroot in production environments.
 
@@ -58,7 +68,8 @@ const code = `
 		local fullpath="${base}${uri}"
 
 		if [ -x "${fullpath}" ] && [ ! -d "${fullpath}" ]; then
-			cd "${base}/${dir}" && SCRIPT_NAME="${URI_BASE}${uri}" SCRIPT_PATH="${fullpath}" exec "${fullpath}"
+			export SCRIPT_NAME="${COBALT_URI_BASE}${uri}" SCRIPT_PATH="${fullpath}"
+			cd "${base}/${dir}" && exec "${fullpath}"
 			exit
 		fi
 	}
@@ -103,6 +114,8 @@ const code = `
 	echo 404 Not Found
 `
 
+// Split the string into the bit which identifies the box and task
+// ({boxname}, {publishToken}, {task e.g cgi-bin}) and (script path to invoke)
 func GetTarget(r *http.Request) (prefix, target string) {
 	result := strings.SplitAfterN(r.URL.Path, "/", 5)
 	if len(result) != 5 {
@@ -134,34 +147,31 @@ func HandleCGI(w http.ResponseWriter, r *http.Request) {
 
 	cgipath := "sh"
 	cgiargs := []string{"-c", code, user, target}
-	if os.Getuid() == 0 {
-		cgipath = "su"
-	}
-	var err error
-	cgipath, err = exec.LookPath(cgipath)
-	if err != nil {
-		log.Panic(err)
-	}
-	// on Dir: In the usual case where we're su'ing into a
-	// box, setting Dir has no effect because the PAM
-	// chroot module changes the current directory
-	// (to be / in the box's chrooted environment).
-	// on $HOME: The cgi module only sets certain
-	// environment variables, and leaves HOME unset.
-	// We set the directory within the command.
 
-	if boxHome == cobaltHome {
-		// TODO(pwaller)
-		// If they're the same, we're probably not in a chroot.
-		boxHome = path.Join(boxHome, user)
+	if inProduction {
+		cgipath = "/bin/su"
+		cgiargs = append([]string{"--shell=/bin/bash"}, cgiargs...)
 	}
+
+	var thisBoxHome = boxHome
+	if !inProduction {
+		// If we're in a production environment, then we find home at `boxHome`,
+		// otherwise it's at `{boxHome}/{username}`.
+		thisBoxHome = path.Join(thisBoxHome, user)
+	}
+
+	// on Dir: In the usual case where we're su'ing into a box, setting Dir has
+	// no effect because the PAM chroot module changes the current directory
+	// (to be / in the box's chrooted environment).
+	// on $HOME: The cgi module only sets certain environment variables, and
+	// leaves HOME unset. We set the directory within the command invoked.
 	handler := &cgi.Handler{
 		Path: cgipath,
 		Args: cgiargs,
 		Env: []string{
-			fmt.Sprint("URI_BASE=/", vars["box"], "/", vars["publishToken"]),
+			fmt.Sprint("COBALT_URI_BASE=/", vars["box"], "/", vars["publishToken"]),
 			"SERVER_SOFTWARE=github.com/scraperwiki/cobalt/go/daemons/cgi-endpoint",
-			"COBALT_BOX_HOME=" + boxHome,
+			"COBALT_BOX_HOME=" + thisBoxHome,
 			"COBALT_GLOBAL_CGI=" + globalCGI,
 		}}
 
@@ -182,20 +192,7 @@ func Listen(host, port string) (l net.Listener, err error) {
 	return
 }
 
-func main() {
-
-	log.Println("COBALT_HOME =", cobaltHome)
-	log.Println("COBALT_BOX_HOME =", boxHome)
-	log.Println("COBALT_GLOBAL_CGI =", globalCGI)
-
-	l, err := Listen(os.Getenv("HOST"), os.Getenv("PORT"))
-	if err != nil {
-		log.Fatalln("Error listening:", err)
-	}
-	defer l.Close()
-
-	log.Printf("Listening on %s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
-
+func NewHandler() http.Handler {
 	router := mux.NewRouter()
 
 	box := router.PathPrefix("/{box}/{publishToken}/").Subrouter()
@@ -206,10 +203,28 @@ func main() {
 	n := negroni.Classic()
 	n.UseHandler(router)
 
-	s := &http.Server{
-		Handler: n,
-	}
+	return n
+}
 
+func main() {
+
+	log.Println("COBALT_HOME =", cobaltHome)
+	log.Println("COBALT_BOX_HOME =", boxHome)
+	log.Println("COBALT_GLOBAL_CGI =", globalCGI)
+	log.Println("Production Environment =", inProduction)
+
+	l, err := Listen(os.Getenv("HOST"), os.Getenv("PORT"))
+	if err != nil {
+		log.Fatalln("Error listening:", err)
+	}
+	defer l.Close()
+
+	log.Printf("Listening on %s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
+
+	s := &http.Server{Handler: NewHandler()}
+
+	// Graceful shutdown servers immediately stop listening on CTRL-C, but give
+	// ongoing connections a  chance to finish before terminating.
 	const gracefulShutdownTime = 5 * time.Second
 	graceful.Serve(s, l, gracefulShutdownTime)
 }
