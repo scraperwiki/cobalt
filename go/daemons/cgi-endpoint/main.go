@@ -78,6 +78,8 @@ func isExecutable(mode os.FileMode) bool {
 	return int(mode&0111) != 0
 }
 
+// Can we execute this as a CGI handler?
+// ("Does it exist for our purposes")
 func Exists(path string) bool {
 	// log.Println("Tried", path)
 	s, err := os.Stat(path)
@@ -181,13 +183,6 @@ func HandleCGI(w http.ResponseWriter, r *http.Request) {
 		cgiargs = append([]string{"-c", code, "--"}, args...)
 	}
 
-	var thisBoxHome = boxHome
-	if !inProduction {
-		// If we're in a production environment, then we find home at `boxHome`,
-		// otherwise it's at `{boxHome}/{username}`.
-		thisBoxHome = path.Join(thisBoxHome, user)
-	}
-
 	// on Dir: In the usual case where we're su'ing into a box, setting Dir has
 	// no effect because the PAM chroot module changes the current directory
 	// (to be / in the box's chrooted environment).
@@ -229,7 +224,7 @@ func tokenVerifier(rw http.ResponseWriter, r *http.Request, next http.HandlerFun
 	resp, err := http.Get(endpoint)
 	if err != nil {
 		log.Println("Unable to access", endpoint, "err =", err)
-		http.Error(rw, "500 Service Unavailable", http.StatusServiceUnavailable)
+		http.Error(rw, "503 Service Unavailable", http.StatusServiceUnavailable)
 		return
 	}
 	defer resp.Body.Close()
@@ -260,6 +255,7 @@ func WrapTokenVerifier(handler http.Handler) http.Handler {
 func NewHandler() http.Handler {
 
 	box := mux.NewRouter().PathPrefix("/{box}/{publishToken}/").Subrouter()
+
 	box.PathPrefix("/cgi-bin/").HandlerFunc(HandleCGI)
 	box.PathPrefix("/http/").HandlerFunc(HandleHTTP)
 
