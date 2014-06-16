@@ -27,17 +27,9 @@ func Fatal(first string, args ...string) {
 func isDataboxUser() bool {
 	u, err := user.Lookup(pamUser)
 	if err != nil {
-		log.Fatalln("Failed to obtain passwd entry for", pamUser)
+		Fatal("Failed to obtain passwd entry for", pamUser)
 	}
-	return u.Gid == "10000"
-	// group.LookupId(gid)
-	cmd := exec.Command("id", "-g", pamUser)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Fatalln("pamscript: Failed to obtain group for", pamUser)
-	}
-	result := strings.TrimSpace(string(out))
-	return result == fmt.Sprint(databoxGid)
+	return u.Gid == fmt.Sprint(databoxGid)
 }
 
 func initMounts() {
