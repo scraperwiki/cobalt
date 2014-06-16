@@ -23,11 +23,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 )
+
+func GetFd(l interface{}) uintptr {
+	v := reflect.ValueOf(l).Elem().FieldByName("fd")
+	return uintptr(v.Int())
+}
 
 var trailingPort = regexp.MustCompile(`:([0-9]+)$`)
 
@@ -57,6 +64,7 @@ type Handler struct {
 	InheritEnv []string    // environment variables to inherit from host, as "key"
 	Logger     *log.Logger // optional log for errors or nil to use log.Print
 	Args       []string    // optional arguments to pass to child process
+	Stderr     io.Writer   // optional place to send stderr of process to (default: os.Stderr)
 
 	// PathLocationHandler specifies the root http Handler that
 	// should handle internal redirects when the CGI process
@@ -193,12 +201,20 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		h.printf("CGI error: %v", err)
 	}
 
+	stderr := h.Stderr
+	if stderr == nil {
+		stderr = os.Stderr
+	}
+
 	cmd := &exec.Cmd{
 		Path:   path,
 		Args:   append([]string{h.Path}, h.Args...),
 		Dir:    cwd,
 		Env:    env,
-		Stderr: os.Stderr, // for now
+		Stderr: stderr,
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true,
 	}
 	if req.ContentLength != 0 {
 		cmd.Stdin = req.Body
@@ -219,6 +235,21 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	defer cmd.Wait()
 	defer stdoutRead.Close()
+
+	completed := make(chan struct{})
+	defer close(completed)
+
+	go func() {
+		<-rw.(http.CloseNotifier).CloseNotify()
+
+		select {
+		default:
+			pgrp := &os.Process{Pid: -cmd.Process.Pid}
+			err := pgrp.Signal(os.Kill)
+			log.Println("Sent KILL to pgrp:", err)
+		case <-completed:
+		}
+	}()
 
 	linebody := bufio.NewReaderSize(stdoutRead, 1024)
 	headers := make(http.Header)

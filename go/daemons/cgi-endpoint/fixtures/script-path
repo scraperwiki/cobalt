@@ -1,0 +1,8 @@
+#! /bin/bash
+
+echo Status: 200 OK
+echo Content-Type: text/plain
+echo
+
+echo SCRIPT_PATH=$SCRIPT_PATH
+echo SCRIPT_NAME=$SCRIPT_NAME
