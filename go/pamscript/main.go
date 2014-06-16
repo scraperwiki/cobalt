@@ -19,6 +19,11 @@ const databoxGid = 10000
 
 var pamUser = os.Getenv("PAM_USER")
 
+func Fatal(first string, args ...string) {
+	// TODO(pwaller): send to syslog?
+	log.Fatalln("pam script: "+first, args...)
+}
+
 func isDataboxUser() bool {
 	u, err := user.Lookup(pamUser)
 	if err != nil {
@@ -72,7 +77,7 @@ func initCgroup() {
 	if _, err := os.Stat(path.Join("/sys/fs/cgroup/cpu", pamUser)); err != nil {
 		err = cgcreate()
 		if err != nil {
-			log.Fatalln("pamscript: Failed to create cgroup")
+			Fatal("Failed to create cgroup")
 		}
 	}
 
@@ -82,7 +87,7 @@ func initCgroup() {
 	f := path.Join("/sys/fs/cgroup/memory", pamUser, "/memory.limit_in_bytes")
 	err = ioutil.WriteFile(f, []byte(fmt.Sprint(memoryLimit)), 0)
 	if err != nil {
-		log.Fatalln("pamscript: Failed to write", f, ":", err)
+		Fatal("Failed to write", f, ":", err)
 	}
 
 	// echo $MemoryLimit > /sys/fs/cgroup/memory/$PAM_USER/memory.limit_in_bytes
@@ -126,7 +131,7 @@ func main() {
 	}
 
 	if pamUser == "" {
-		log.Fatalln("pamscript: PAM_USER not set. NOP.")
+		Fatal("PAM_USER not set. Abort.")
 	}
 
 	initCgroup()
