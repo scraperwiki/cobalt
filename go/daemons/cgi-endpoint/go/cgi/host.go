@@ -248,7 +248,6 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			err := pgrp.Signal(os.Kill)
 			log.Println("Sent KILL to pgrp:", err)
 		case <-completed:
-			log.Println("Process completed")
 		}
 	}()
 
