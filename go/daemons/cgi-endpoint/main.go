@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -24,7 +25,8 @@ var (
 	cobaltHome   = "/var/lib/cobalt/home" // Location of boxes outside chroot
 	boxHome      = "/home"                // Location of $HOME inside one chroot
 	globalCGI    = "/tools/global-cgi"    // Location of global CGI scripts
-	inProduction = false                  // Running in production
+	checkToken   = "http://localhost:23423"
+	inProduction = false // Running in production
 )
 
 func init() {
@@ -36,6 +38,9 @@ func init() {
 	}
 	if os.Getenv("COBALT_GLOBAL_CGI") != "" {
 		globalCGI = os.Getenv("COBALT_GLOBAL_CGI")
+	}
+	if os.Getenv("COBALT_CHECKTOKEN") != "" {
+		checkToken = os.Getenv("COBALT_CHECKTOKEN")
 	}
 
 	inProduction = os.Getenv("SCRAPERWIKI_ENV") == "production"
@@ -208,8 +213,28 @@ func Listen(host, port string) (l net.Listener, err error) {
 
 func tokenVerifier(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	vars := mux.Vars(r)
-	// TODO(pwaller): Reject connection based on contents of vars
-	_ = vars
+
+	if checkToken == "off" {
+		next(rw, r)
+		return
+	}
+
+	endpoint := checkToken + "/" + path.Join(vars["box"], vars["publishToken"])
+	resp, err := http.Get(endpoint)
+	if err != nil {
+		log.Println("Unable to access", endpoint, "err =", err)
+		http.Error(rw, "500 Service Unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		rw.WriteHeader(resp.StatusCode)
+		// Discard error.
+		_, _ = io.Copy(rw, resp.Body)
+		return
+	}
+
 	next(rw, r)
 }
 
@@ -243,6 +268,7 @@ func main() {
 	log.Println("COBALT_HOME =", cobaltHome)
 	log.Println("COBALT_BOX_HOME =", boxHome)
 	log.Println("COBALT_GLOBAL_CGI =", globalCGI)
+	log.Println("COBALT_CHECKTOKEN =", checkToken)
 	log.Println("Production Environment =", inProduction)
 
 	l, err := Listen(os.Getenv("HOST"), os.Getenv("PORT"))
