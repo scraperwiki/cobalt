@@ -91,11 +91,14 @@ func Exists(path string) bool {
 // found. It also searches for matching default scripts, and in the
 // /tool/cgi-bin directory, and in the /tool/globals directory.
 func FindCgiScript(user, target string) (fullpath, uri string, ok bool) {
+	var thisOutsideChrootHome = path.Join(cobaltHome, user)
+
+	// Path to $HOME inside box doesn't contain $USER in production.
 	var thisBoxHome = boxHome
 	if !inProduction {
 		// If we're in a production environment, then we find home at `boxHome`,
 		// otherwise it's at `{boxHome}/{username}`.
-		thisBoxHome = path.Join(thisBoxHome, user)
+		thisBoxHome = path.Join(boxHome, user)
 	}
 
 	// Search for a script at {root}/{target}, then look for matching scripts
@@ -119,15 +122,15 @@ func FindCgiScript(user, target string) (fullpath, uri string, ok bool) {
 	}
 
 	roots := []struct {
-		base, place string
+		outsideChrootBase, base, place string
 	}{
-		{thisBoxHome, "cgi-bin"},
-		{thisBoxHome, "tool/cgi-bin"},
-		{globalCGI, "cgi-bin"},
+		{thisOutsideChrootHome, thisBoxHome, "cgi-bin"},
+		{thisOutsideChrootHome, thisBoxHome, "tool/cgi-bin"},
+		{globalCGI, globalCGI, "cgi-bin"},
 	}
 
 	for _, root := range roots {
-		uri, ok := lookForScript(path.Join(root.base, root.place), target)
+		uri, ok := lookForScript(path.Join(root.outsideChrootBase, root.place), target)
 		if ok {
 			return path.Join(root.base, root.place, uri), uri, ok
 		}
@@ -140,6 +143,9 @@ func HandleCGI(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user := vars["box"]
 	prefix, target := GetTarget(r)
+
+	// Prefix contains /{boxname}/{boxToken}
+	// scriptUri contains /cgi-bin/foo.
 
 	scriptPath, scriptUri, ok := FindCgiScript(user, target)
 	if !ok {
