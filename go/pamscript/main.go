@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/dotcloud/docker/pkg/mount"
@@ -19,9 +18,9 @@ const databoxGid = 10000
 
 var pamUser = os.Getenv("PAM_USER")
 
-func Fatal(first string, args ...string) {
+func Fatal(first string, args ...interface{}) {
 	// TODO(pwaller): send to syslog?
-	log.Fatalln("pam script: "+first, args...)
+	log.Fatalf("pam script: "+first, args...)
 }
 
 func isDataboxUser() bool {
@@ -46,6 +45,9 @@ func initMounts() {
 	}
 
 	for _, m := range mounts {
+		// Note the use of recursive bind mounts.
+		// We could avoid some mounts by just arranging that /opt/basejail
+		// already has most of the mounts.
 		err := mount.Mount(m.src, m.tgt, "", "rbind")
 		if err != nil {
 			log.Fatalf("pamscript: Failed to mount %s -> %s: %q", m.src, m.tgt, err)
@@ -106,8 +108,23 @@ func initCgroup() {
 	for _, f := range files {
 		err = ioutil.WriteFile(f, parentPid, 0)
 		if err != nil {
-			log.Fatalln("pamscript: Failed to write", f, ":", err)
+			Fatal("Failed to write", f, ":", err)
 		}
+	}
+}
+
+func verifyMountNamespace() {
+	// if [[ "$(readlink /proc/1/ns/mnt)" == "$(readlink /proc/self/ns/mnt)" ]]; then
+	initMountNS, err := os.Readlink("/proc/1/ns/mnt")
+	if err != nil {
+		Fatal("Unable to readlink(/proc/1/ns/mnt). Aborting.")
+	}
+	myMountNS, err := os.Readlink("/proc/self/ns/mnt")
+	if err != nil {
+		Fatal("Unable to readlink(/proc/self/ns/mnt). Aborting.")
+	}
+	if initMountNS == myMountNS {
+		Fatal("Not in mount namespace. Abort.")
 	}
 }
 
@@ -118,13 +135,16 @@ func main() {
 	}()
 
 	if !isDataboxUser() {
-		log.Println("Skip non-databox user")
+		// log.Println("Skip non-databox user")
+		// skip non-databox login
 		return
 	}
 
 	if pamUser == "" {
 		Fatal("PAM_USER not set. Abort.")
 	}
+
+	verifyMountNamespace()
 
 	initCgroup()
 	initMounts()
