@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
+	"syscall"
 	"time"
 
 	"github.com/dotcloud/docker/pkg/mount"
@@ -137,6 +138,13 @@ func verifyMountNamespace() {
 }
 
 func main() {
+	me := os.Getpid()
+	const HIGHEST_PRIORITY = -20
+	err := syscall.Setpriority(syscall.PRIO_PROCESS, me, HIGHEST_PRIORITY)
+	if err != nil {
+		log.Println("Setpriority() ->", err)
+	}
+
 	start := time.Now()
 	defer func() {
 		// Include the time in milliseconds.
