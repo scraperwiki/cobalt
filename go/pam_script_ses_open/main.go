@@ -22,7 +22,7 @@ var pamUser = os.Getenv("PAM_USER")
 var log *logpkg.Logger
 
 func init() {
-	os.Args[0] = "pam_script_ses_open"
+	os.Args[0] = "PSSO"
 	log, _ = syslog.NewLogger(syslog.LOG_WARNING|syslog.LOG_AUTH, 0)
 }
 
@@ -139,7 +139,10 @@ func verifyMountNamespace() {
 func main() {
 	start := time.Now()
 	defer func() {
-		log.Println("took", time.Since(start))
+		// Include the time in milliseconds.
+		timeMillis := time.Since(start).Seconds() * 1000
+		s := fmt.Sprintf("$PAM_USER $PAM_SERVICE %f $PAM_RHOST", timeMillis)
+		log.Println(os.ExpandEnv(s))
 	}()
 
 	if !isDataboxUser() {
