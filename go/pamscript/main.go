@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
+	"log/syslog"
 	"os"
 	"os/exec"
 	"os/user"
@@ -17,6 +17,7 @@ import (
 const databoxGid = 10000
 
 var pamUser = os.Getenv("PAM_USER")
+var log, _ = syslog.NewLogger(syslog.LOG_WARNING | syslog.LOG_AUTH, 0)
 
 func Fatal(first string, args ...interface{}) {
 	// TODO(pwaller): send to syslog?
@@ -26,7 +27,7 @@ func Fatal(first string, args ...interface{}) {
 func isDataboxUser() bool {
 	u, err := user.Lookup(pamUser)
 	if err != nil {
-		Fatal("Failed to obtain passwd entry for", pamUser)
+		Fatal("Failed to obtain passwd entry for %q", pamUser)
 	}
 	return u.Gid == fmt.Sprint(databoxGid)
 }
@@ -135,7 +136,7 @@ func main() {
 	}()
 
 	if !isDataboxUser() {
-		// log.Println("Skip non-databox user")
+		log.Println("Skip non-databox user")
 		// skip non-databox login
 		return
 	}
