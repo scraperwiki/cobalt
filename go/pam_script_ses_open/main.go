@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -138,6 +139,12 @@ func verifyMountNamespace() {
 }
 
 func main() {
+
+	// Voodoo: Ensure that code runs in the same thread with the high priority.
+	// <pwaller> I did this because you can see threads that don't have the
+	// highest priority. Hopefully this helps?
+	runtime.LockOSThread()
+
 	me := os.Getpid()
 	const HIGHEST_PRIORITY = -20
 	err := syscall.Setpriority(syscall.PRIO_PROCESS, me, HIGHEST_PRIORITY)
