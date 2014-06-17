@@ -55,7 +55,7 @@ func GetDatabase() *mgo.Database {
 	session, err := mgo.Dial(db_host)
 	check(err)
 
-	return session.DB("cu-live-eu")
+	return session.DB("")
 }
 
 func main() {
