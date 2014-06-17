@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	logpkg "log"
 	"log/syslog"
 	"os"
 	"os/exec"
@@ -17,7 +18,13 @@ import (
 const databoxGid = 10000
 
 var pamUser = os.Getenv("PAM_USER")
-var log, _ = syslog.NewLogger(syslog.LOG_WARNING | syslog.LOG_AUTH, 0)
+
+var log *logpkg.Logger
+
+func init() {
+	os.Args[0] = "pam_script_ses_open"
+	log, _ = syslog.NewLogger(syslog.LOG_WARNING|syslog.LOG_AUTH, 0)
+}
 
 func Fatal(first string, args ...interface{}) {
 	// TODO(pwaller): send to syslog?
@@ -132,7 +139,7 @@ func verifyMountNamespace() {
 func main() {
 	start := time.Now()
 	defer func() {
-		log.Println("pam_script_ses_open took", time.Since(start))
+		log.Println("took", time.Since(start))
 	}()
 
 	if !isDataboxUser() {
