@@ -169,6 +169,7 @@ func HandleCGI(w http.ResponseWriter, r *http.Request) {
 		# These two are the full path of the script being invoked
 		export SCRIPT_FILENAME="$1"
 		export SCRIPT_PATH="$1"
+		cd "$(dirname "$SCRIPT_PATH")"
 		exec "$@"
 	`
 
