@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
+	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/dotcloud/docker/pkg/mount"
@@ -137,6 +139,19 @@ func verifyMountNamespace() {
 }
 
 func main() {
+
+	// Voodoo: Ensure that code runs in the same thread with the high priority.
+	// <pwaller> I did this because you can see threads that don't have the
+	// highest priority. Hopefully this helps?
+	runtime.LockOSThread()
+
+	me := os.Getpid()
+	const HIGHEST_PRIORITY = -20
+	err := syscall.Setpriority(syscall.PRIO_PROCESS, me, HIGHEST_PRIORITY)
+	if err != nil {
+		log.Println("Setpriority() ->", err)
+	}
+
 	start := time.Now()
 	defer func() {
 		// Include the time in milliseconds.
