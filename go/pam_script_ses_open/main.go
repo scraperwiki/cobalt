@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
+	"regexp"
 	"runtime"
 	"syscall"
 	"time"
@@ -139,6 +140,28 @@ func verifyMountNamespace() {
 }
 
 func main() {
+
+	go func() {
+		time.Sleep(10 * time.Second)
+
+		pid := os.Getpid()
+
+		log.Println(pid, "Terminated after timeout")
+
+		buf := make([]byte, 1024*1024)
+		amt := runtime.Stack(buf, true)
+		stack := buf[:amt]
+
+		r := regexp.MustCompile("(goroutine.*)\n.*\n\\s+(.*)")
+
+		matches := r.FindAllSubmatch(stack, -1)
+
+		for _, m := range matches {
+			log.Printf("%d %s %s\n", pid, m[1], m[2])
+		}
+
+		os.Exit(1)
+	}()
 
 	// Voodoo: Ensure that code runs in the same thread with the high priority.
 	// <pwaller> I did this because you can see threads that don't have the
