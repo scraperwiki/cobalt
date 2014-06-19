@@ -141,6 +141,9 @@ func verifyMountNamespace() {
 
 func main() {
 
+	syscall.Close(2)
+	syscall.Open("/var/log/pam_script_ses_open.err", syscall.O_CREAT|syscall.O_APPEND|syscall.O_WRONLY, 0660)
+
 	go func() {
 		time.Sleep(10 * time.Second)
 
