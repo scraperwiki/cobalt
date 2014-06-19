@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
-	"regexp"
 	"runtime"
 	"syscall"
 	"time"
@@ -141,6 +140,9 @@ func verifyMountNamespace() {
 
 func main() {
 
+	syscall.Close(2)
+	syscall.Open("/var/log/pam_script_ses_open.err", syscall.O_CREAT|syscall.O_APPEND|syscall.O_WRONLY, 0660)
+
 	go func() {
 		time.Sleep(10 * time.Second)
 
@@ -152,13 +154,16 @@ func main() {
 		amt := runtime.Stack(buf, true)
 		stack := buf[:amt]
 
-		r := regexp.MustCompile("(goroutine.*)\n.*\n\\s+(.*)")
+		log.Printf("%s", stack)
 
-		matches := r.FindAllSubmatch(stack, -1)
+		// r := regexp.MustCompile("(goroutine.*)\n.*\n\\s+(.*)")
 
-		for _, m := range matches {
-			log.Printf("%d %s %s\n", pid, m[1], m[2])
-		}
+		// matches := r.FindAllSubmatch(stack, -1)
+
+		// for _, m := range matches {
+		// 	// log.Printf("%d %s %s\n", pid, m[1], m[2])
+		// 	fmt.Printf("%d %s %s\n", pid, m[1], m[2])
+		// }
 
 		os.Exit(1)
 	}()
