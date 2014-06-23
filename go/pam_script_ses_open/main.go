@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	logpkg "log"
-	"log/syslog"
+	// "log/syslog"
 	"os"
 	"os/exec"
 	"os/user"
@@ -14,6 +14,11 @@ import (
 	"time"
 
 	"github.com/dotcloud/docker/pkg/mount"
+
+	// Fixed syslog implementation.
+	// See https://github.com/scraperwiki/swops/issues/132
+	// and https://code.google.com/p/go/issues/detail?id=5932
+	"github.com/scraperwiki/cobalt/go/pam_script_ses_open/syslog"
 )
 
 // Must be true everywhere.
