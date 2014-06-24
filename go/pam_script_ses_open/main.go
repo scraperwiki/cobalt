@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/dotcloud/docker/pkg/mount"
+	"github.com/proxypoke/group.go"
 
 	// Fixed syslog implementation.
 	// See https://github.com/scraperwiki/swops/issues/132
@@ -24,6 +25,8 @@ import (
 // Must be true everywhere.
 const databoxGid = 10000
 
+var PROC_MOUNT_CONFIG string
+
 var pamUser = os.Getenv("PAM_USER")
 
 var log *logpkg.Logger
@@ -31,6 +34,12 @@ var log *logpkg.Logger
 func init() {
 	os.Args[0] = "PSSO"
 	log, _ = syslog.NewLogger(syslog.LOG_WARNING|syslog.LOG_AUTH, 0)
+
+	sudoGroup, err := group.Lookup("sudo")
+	if err != nil {
+		panic("Unable to find group 'sudo'")
+	}
+	PROC_MOUNT_CONFIG = fmt.Sprintf("hidepid=2,gid=%s", sudoGroup.Gid)
 }
 
 func Fatal(first string, args ...interface{}) {
@@ -67,6 +76,15 @@ func initMounts() {
 		if err != nil {
 			log.Fatalf("pamscript: Failed to mount %s -> %s: %q", m.src, m.tgt, err)
 		}
+	}
+}
+
+func protectProc() {
+	// use syscall.Mount here because mount.Mount checks if the mountpoint
+	// is present already.
+	err := syscall.Mount("proc", "/proc", "proc", syscall.MS_REMOUNT, PROC_MOUNT_CONFIG)
+	if err != nil {
+		log.Fatalf("Failed to protect /proc: %q", err)
 	}
 }
 
@@ -204,6 +222,8 @@ func main() {
 	}
 
 	verifyMountNamespace()
+
+	protectProc()
 
 	initCgroup()
 	initMounts()
