@@ -33,7 +33,13 @@ var log *logpkg.Logger
 
 func init() {
 	os.Args[0] = "PSSO"
-	log, _ = syslog.NewLogger(syslog.LOG_WARNING|syslog.LOG_AUTH, 0)
+	var err error
+	log, err = syslog.NewLogger(syslog.LOG_WARNING|syslog.LOG_AUTH, 0)
+	if err != nil {
+		// Revert to stderr logging.
+		log = logpkg.New(os.Stderr, "PSSO", logpkg.LstdFlags)
+		log.Println("Unable to create syslogger: %q", err)
+	}
 
 	sudoGroup, err := group.Lookup("sudo")
 	if err != nil {
@@ -55,8 +61,7 @@ func isDataboxUser() bool {
 	return u.Gid == fmt.Sprint(databoxGid)
 }
 
-func initMounts() {
-	home := path.Join("/var/lib/cobalt/home/", pamUser)
+func initMounts(home, tmpDir string) {
 
 	mounts := []struct{ src, tgt string }{
 		{"/opt/basejail", "/jail"},
@@ -66,6 +71,7 @@ func initMounts() {
 		{"/var/spool/cron/crontabs", "/jail/var/spool/cron/crontabs"},
 		{"/var/lib/extrausers", "/jail/var/lib/extrausers"},
 		{home, "/jail/home"},
+		{tmpDir, "/jail/tmp"},
 	}
 
 	for _, m := range mounts {
@@ -74,9 +80,35 @@ func initMounts() {
 		// already has most of the mounts.
 		err := mount.Mount(m.src, m.tgt, "", "rbind")
 		if err != nil {
-			log.Fatalf("pamscript: Failed to mount %s -> %s: %q", m.src, m.tgt, err)
+			log.Fatalf("Failed to mount %s -> %s: %q", m.src, m.tgt, err)
 		}
 	}
+}
+
+func mktmpdir(home string) string {
+	dst := path.Join(home, "tmp")
+	err := os.MkdirAll(dst, 0700)
+	if err != nil {
+		log.Panicln("Making tmpdir %q", err)
+	}
+
+	u, err := user.Lookup(pamUser)
+	if err != nil {
+		log.Panicln("Lookup UID %v: %q", pamUser, err)
+	}
+
+	var uid int
+	_, err = fmt.Sscan(u.Uid, &uid)
+	if err != nil {
+		log.Panicln("Parsing UID %q: ", u.Uid, err)
+	}
+
+	err = os.Chown(dst, uid, databoxGid)
+	if err != nil {
+		log.Panicln("Chown(%q, %v, %v) = %q", dst, uid, databoxGid, err)
+	}
+
+	return dst
 }
 
 func protectProc() {
@@ -161,35 +193,26 @@ func verifyMountNamespace() {
 	}
 }
 
+func TimeoutAbort() {
+	time.Sleep(10 * time.Second)
+
+	pid := os.Getpid()
+
+	log.Println(pid, "Terminated after timeout")
+
+	buf := make([]byte, 1024*1024)
+	amt := runtime.Stack(buf, true)
+	stack := buf[:amt]
+
+	log.Printf("%s", stack)
+
+	os.Exit(1)
+}
+
 func main() {
 
 	syscall.Close(2)
 	syscall.Open("/var/log/pam_script_ses_open.err", syscall.O_CREAT|syscall.O_APPEND|syscall.O_WRONLY, 0660)
-
-	go func() {
-		time.Sleep(10 * time.Second)
-
-		pid := os.Getpid()
-
-		log.Println(pid, "Terminated after timeout")
-
-		buf := make([]byte, 1024*1024)
-		amt := runtime.Stack(buf, true)
-		stack := buf[:amt]
-
-		log.Printf("%s", stack)
-
-		// r := regexp.MustCompile("(goroutine.*)\n.*\n\\s+(.*)")
-
-		// matches := r.FindAllSubmatch(stack, -1)
-
-		// for _, m := range matches {
-		// 	// log.Printf("%d %s %s\n", pid, m[1], m[2])
-		// 	fmt.Printf("%d %s %s\n", pid, m[1], m[2])
-		// }
-
-		os.Exit(1)
-	}()
 
 	// Voodoo: Ensure that code runs in the same thread with the high priority.
 	// <pwaller> I did this because you can see threads that don't have the
@@ -221,10 +244,15 @@ func main() {
 		Fatal("PAM_USER not set. Abort.")
 	}
 
+	go TimeoutAbort()
+
 	verifyMountNamespace()
 
 	protectProc()
 
 	initCgroup()
-	initMounts()
+
+	home := path.Join("/var/lib/cobalt/home/", pamUser)
+	tmpDir := mktmpdir(home)
+	initMounts(home, tmpDir)
 }
