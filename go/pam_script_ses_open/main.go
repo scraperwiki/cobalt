@@ -180,17 +180,7 @@ func TimeoutAbort() {
 
 	log.Printf("%s", stack)
 
-	// r := regexp.MustCompile("(goroutine.*)\n.*\n\\s+(.*)")
-
-	// matches := r.FindAllSubmatch(stack, -1)
-
-	// for _, m := range matches {
-	// 	// log.Printf("%d %s %s\n", pid, m[1], m[2])
-	// 	fmt.Printf("%d %s %s\n", pid, m[1], m[2])
-	// }
-
 	os.Exit(1)
-
 }
 
 func main() {
