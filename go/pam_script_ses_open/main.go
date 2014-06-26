@@ -33,7 +33,13 @@ var log *logpkg.Logger
 
 func init() {
 	os.Args[0] = "PSSO"
-	log, _ = syslog.NewLogger(syslog.LOG_WARNING|syslog.LOG_AUTH, 0)
+	var err error
+	log, err = syslog.NewLogger(syslog.LOG_WARNING|syslog.LOG_AUTH, 0)
+	if err != nil {
+		// Revert to stderr logging.
+		log = logpkg.New(os.Stderr, "PSSO", logpkg.LstdFlags)
+		log.Println("Unable to create syslogger: %q", err)
+	}
 
 	sudoGroup, err := group.Lookup("sudo")
 	if err != nil {
