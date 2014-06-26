@@ -34,7 +34,7 @@ const severityMask = 0x07
 const facilityMask = 0xf8
 
 var writeTimeout = 1 * time.Second
-var connectTimeout = 1 * time.Second
+var connectTimeout = 10 * time.Second
 
 const (
 	// Severity.
