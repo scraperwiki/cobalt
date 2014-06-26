@@ -61,8 +61,7 @@ func isDataboxUser() bool {
 	return u.Gid == fmt.Sprint(databoxGid)
 }
 
-func initMounts() {
-	home := path.Join("/var/lib/cobalt/home/", pamUser)
+func initMounts(home, tmpDir string) {
 
 	mounts := []struct{ src, tgt string }{
 		{"/opt/basejail", "/jail"},
@@ -72,6 +71,7 @@ func initMounts() {
 		{"/var/spool/cron/crontabs", "/jail/var/spool/cron/crontabs"},
 		{"/var/lib/extrausers", "/jail/var/lib/extrausers"},
 		{home, "/jail/home"},
+		{tmpDir, "/jail/tmp"},
 	}
 
 	for _, m := range mounts {
@@ -80,9 +80,35 @@ func initMounts() {
 		// already has most of the mounts.
 		err := mount.Mount(m.src, m.tgt, "", "rbind")
 		if err != nil {
-			log.Fatalf("pamscript: Failed to mount %s -> %s: %q", m.src, m.tgt, err)
+			log.Fatalf("Failed to mount %s -> %s: %q", m.src, m.tgt, err)
 		}
 	}
+}
+
+func mktmpdir(home string) string {
+	dst := path.Join(home, "tmp")
+	err := os.MkdirAll(dst, 0700)
+	if err != nil {
+		log.Panicln("Making tmpdir %q", err)
+	}
+
+	u, err := user.Lookup(pamUser)
+	if err != nil {
+		log.Panicln("Lookup UID %v: %q", pamUser, err)
+	}
+
+	var uid int
+	_, err = fmt.Sscan(u.Uid, &uid)
+	if err != nil {
+		log.Panicln("Parsing UID %q: ", u.Uid, err)
+	}
+
+	err = os.Chown(dst, uid, databoxGid)
+	if err != nil {
+		log.Panicln("Chown(%q, %v, %v) = %q", dst, uid, databoxGid, err)
+	}
+
+	return dst
 }
 
 func protectProc() {
@@ -225,5 +251,8 @@ func main() {
 	protectProc()
 
 	initCgroup()
-	initMounts()
+
+	home := path.Join("/var/lib/cobalt/home/", pamUser)
+	tmpDir := mktmpdir(home)
+	initMounts(home, tmpDir)
 }
