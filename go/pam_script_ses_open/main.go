@@ -167,35 +167,36 @@ func verifyMountNamespace() {
 	}
 }
 
+func TimeoutAbort() {
+	time.Sleep(10 * time.Second)
+
+	pid := os.Getpid()
+
+	log.Println(pid, "Terminated after timeout")
+
+	buf := make([]byte, 1024*1024)
+	amt := runtime.Stack(buf, true)
+	stack := buf[:amt]
+
+	log.Printf("%s", stack)
+
+	// r := regexp.MustCompile("(goroutine.*)\n.*\n\\s+(.*)")
+
+	// matches := r.FindAllSubmatch(stack, -1)
+
+	// for _, m := range matches {
+	// 	// log.Printf("%d %s %s\n", pid, m[1], m[2])
+	// 	fmt.Printf("%d %s %s\n", pid, m[1], m[2])
+	// }
+
+	os.Exit(1)
+
+}
+
 func main() {
 
 	syscall.Close(2)
 	syscall.Open("/var/log/pam_script_ses_open.err", syscall.O_CREAT|syscall.O_APPEND|syscall.O_WRONLY, 0660)
-
-	go func() {
-		time.Sleep(10 * time.Second)
-
-		pid := os.Getpid()
-
-		log.Println(pid, "Terminated after timeout")
-
-		buf := make([]byte, 1024*1024)
-		amt := runtime.Stack(buf, true)
-		stack := buf[:amt]
-
-		log.Printf("%s", stack)
-
-		// r := regexp.MustCompile("(goroutine.*)\n.*\n\\s+(.*)")
-
-		// matches := r.FindAllSubmatch(stack, -1)
-
-		// for _, m := range matches {
-		// 	// log.Printf("%d %s %s\n", pid, m[1], m[2])
-		// 	fmt.Printf("%d %s %s\n", pid, m[1], m[2])
-		// }
-
-		os.Exit(1)
-	}()
 
 	// Voodoo: Ensure that code runs in the same thread with the high priority.
 	// <pwaller> I did this because you can see threads that don't have the
@@ -226,6 +227,8 @@ func main() {
 	if pamUser == "" {
 		Fatal("PAM_USER not set. Abort.")
 	}
+
+	go TimeoutAbort()
 
 	verifyMountNamespace()
 
