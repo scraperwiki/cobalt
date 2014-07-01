@@ -1,5 +1,4 @@
 cobalt: scraperwiki-start-cobalt
-gobalt: gobalt-fastcgi-server
 checktoken: scraperwiki-check-token
 sshkeys: scraperwiki-sshkeys
 cgiendpoint: SCRAPERWIKI_ENV=production PORT=61234 scraperwiki-cgi-endpoint
