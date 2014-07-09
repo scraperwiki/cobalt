@@ -34,7 +34,6 @@ func main() {
 
 	if !databox {
 		log.Fatalln(user, "is not a databox user")
-		return
 	}
 
 	binary, err := exec.LookPath("su")
