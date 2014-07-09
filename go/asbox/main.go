@@ -41,7 +41,7 @@ func main() {
 	}
 
 	runtime.LockOSThread()
-	err := syscall.Setuid(0)
+	err = syscall.Setuid(0)
 	if err != nil {
 		log.Fatalln("Unable to setuid")
 	}
