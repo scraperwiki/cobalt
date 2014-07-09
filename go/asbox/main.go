@@ -21,7 +21,6 @@ func isDataboxUser(userName string) (bool, error) {
 }
 
 func main() {
-
 	if len(os.Args) < 2 {
 		log.Fatalln("Usage: asbox <user> <shell command> [args...]")
 	}
