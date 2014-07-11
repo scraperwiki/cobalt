@@ -15,35 +15,8 @@ mongoose = require 'mongoose'
 request = require 'request'
 checkIdent = require 'ident-express'
 _ = require 'underscore'
-redis = require 'redis'
 
 liverpool_office_ip = '151.237.236.138'
-
-# The test rely on the redis client being created now at module import time,and rely on the
-# listen happening later, when the .start() method is called.
-exports.redisClient = redisClient = redis.createClient 6379, process.env.REDIS_SERVER
-if /production|staging/.test process.env.NODE_ENV
-  redisClient.auth process.env.REDIS_PASSWORD, (err) ->
-    if err?
-      console.warn 'Redis auth error: ', err
-
-redisClient.on 'pmessage', (pattern, channel, message) ->
-  updatePath = "tool/hooks/update"
-  #TODO: try catch
-  message = JSON.parse message
-  origin = message.origin
-
-  url = "https://#{origin.boxServer}/#{origin.box}/#{origin.boxJSON.publish_token}"
-
-  #TODO(pwaller): use async exists
-  for box in message.boxes
-    if fs.existsSync "/#{process.env.CO_STORAGE_DIR}/home/#{box}/#{updatePath}"
-      console.log "Executing update hook for #{box}"
-      arg0 = "/home/#{updatePath}"
-      cmd = arg0 + ' "$@"'
-      run = "su #{box} -l -c '#{cmd}' -- #{arg0} #{url}"
-      console.log "Running: ", run
-      child_process.exec run
 
 Box = require 'models/box'
 User = require 'models/user'
@@ -327,16 +300,9 @@ exports.start = (cb) ->
     if fs.existsSync(port)
       fs.chmodSync port, 0o600
       child_process.exec "chown www-data #{port}"
-    redisClient.psubscribe PATTERN
-    psubscribeListener = ->
-      cb null, server
-    redisClient.on 'psubscribe', psubscribeListener
 
 exports.stop = (cb) ->
   console.log "Gracefully stopping..."
-  redisClient.punsubscribe PATTERN
-  redisClient.removeListener 'psubscribe', psubscribeListener
-  psubscribeListener = null
   server.close ->
     server = null
     cb()
