@@ -178,7 +178,7 @@ func HandleCGI(w http.ResponseWriter, r *http.Request) {
 
 	if inProduction {
 		cgipath = "/bin/su"
-		cgiargs = append([]string{"-c", code, user, "--", "-sh"}, args...)
+		cgiargs = append([]string{"--shell=/bin/sh", "-c", code, user, "--", "-sh"}, args...)
 	} else {
 		// sh doesn't take `user`, nor `$0`.
 		cgipath = "/bin/sh"
