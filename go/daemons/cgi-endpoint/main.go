@@ -18,7 +18,7 @@ import (
 
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
-	"github.com/phyber/negroni-gzip/gzip"
+	// "github.com/phyber/negroni-gzip/gzip"
 	"github.com/stretchr/graceful"
 )
 
@@ -262,7 +262,7 @@ func NewHandler() http.Handler {
 	box.PathPrefix("/http/").HandlerFunc(HandleHTTP)
 
 	n := negroni.Classic()
-	n.Use(gzip.Gzip(1))
+	// n.Use(gzip.Gzip(1))
 	n.UseHandler(WrapTokenVerifier(box))
 
 	return n
