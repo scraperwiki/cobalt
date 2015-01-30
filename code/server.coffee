@@ -248,28 +248,6 @@ app.post "/box/:newboxname/?", check_api_key, checkIP, myCheckIdent, requireAuth
       return res.send 500, {error: "Unable to create box"} if err? or any_stderr
       return res.send {"status": "ok"}
 
-# Add an SSH key to a box
-app.post "/:boxname/sshkeys/?", checkIP, myCheckIdent, requireAuth, (req, res) ->
-  boxname = req.params.boxname
-
-  res.header('Content-Type', 'application/json')
-  unless req.body.keys? then return res.send { error: "SSH keys not specified" }, 400
-
-  boxname = req.params.boxname
-  dir = "/#{process.env.CO_STORAGE_DIR}/sshkeys/#{boxname}"
-  keysPath = "#{dir}/authorized_keys"
-  fs.exists dir, (exists) ->
-    if not exists
-      return res.send 404, error: "Box #{boxname} not found"
-    keys = JSON.parse req.body.keys
-    fs.writeFile keysPath, keys.join('\n'), encoding: 'utf8', (err) ->
-      # Note: octal.  This is deliberate.
-      fs.chmod keysPath, 0o600, (err) ->
-        child_process.exec "chown #{boxname}: #{keysPath}", (err, stdout, stderr) -> # insecure
-          return res.send {"status": "ok"} unless err
-          console.log "ERROR: #{err}, stderr: #{stderr}"
-          return res.send {"error": "Internal creation error"}
-
 # Add a file to a box
 app.post "/:boxname/file/?", check_api_and_box, (req, res) ->
   boxname = req.params.boxname
