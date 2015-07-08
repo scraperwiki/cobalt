@@ -77,6 +77,10 @@ func main() {
 			bson.M{"state": "deleted"},
 			bson.M{"boxServer": *boxServer}}}
 
+	if *boxServer == "*" {
+		deletedQuery = bson.M{"state": "deleted"}
+	}
+
 	// Query all deleted dataset box names along with the view box names
 	q := db.C("datasets").Find(deletedQuery).Select(bson.M{})
 	q = q.Select(bson.M{"box": 1, "views.box": 1, "views.boxServer": 1})
@@ -94,7 +98,12 @@ func main() {
 		}
 	}
 
-	q = db.C("boxes").Find(bson.M{"server": *boxServer})
+	match := bson.M{"server": *boxServer}
+	if *boxServer == "*" {
+		match = bson.M{}
+	}
+
+	q = db.C("boxes").Find(match)
 	q = q.Select(bson.M{"name": 1, "uid": 1})
 
 	var boxes []Box
