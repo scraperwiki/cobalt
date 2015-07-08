@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"github.com/dchest/safefile"
+	"gopkg.in/v2/mgo"
+	"gopkg.in/v2/mgo/bson"
 )
 
 var boxName = flag.String("boxName", "", "boxServer to generate for")
