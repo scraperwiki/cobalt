@@ -11,7 +11,7 @@ import (
 	"gopkg.in/v2/mgo/bson"
 )
 
-var boxName = flag.String("boxName", "", "boxServer to generate for")
+var boxServer = flag.String("boxServer", "", "boxServer to generate for")
 
 type Dataset struct {
 	Box                string `bson:"box"`
@@ -65,8 +65,8 @@ func main() {
 			panic(err)
 		}
 	}()
-	if *boxName == "" {
-		log.Fatal("boxName parameter required")
+	if *boxServer == "" {
+		log.Fatal("boxServer parameter required")
 	}
 
 	db := GetDatabase()
@@ -75,7 +75,7 @@ func main() {
 	deletedQuery := bson.M{
 		"$and": []bson.M{
 			bson.M{"state": "deleted"},
-			bson.M{"boxServer": *boxName}}}
+			bson.M{"boxServer": *boxServer}}}
 
 	// Query all deleted dataset box names along with the view box names
 	q := db.C("datasets").Find(deletedQuery).Select(bson.M{})
@@ -94,7 +94,7 @@ func main() {
 		}
 	}
 
-	q = db.C("boxes").Find(bson.M{"server": *boxName})
+	q = db.C("boxes").Find(bson.M{"server": *boxServer})
 	q = q.Select(bson.M{"name": 1, "uid": 1})
 
 	var boxes []Box
