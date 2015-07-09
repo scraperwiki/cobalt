@@ -65,7 +65,32 @@ func HandleHTTP(w http.ResponseWriter, r *http.Request) {
 
 	prefix, _ := GetTarget(r)
 
-	root := http.Dir(path.Join(cobaltHome, user, "http"))
+	httpDir := path.Join(cobaltHome, user, "http")
+
+	if _, err := os.Stat(httpDir); os.IsNotExist(err) {
+		var message = `<!DOCTYPE html><html>
+<style>
+body {
+	font-family: fantasy;
+	text-align: center;
+	padding-top: 20%;
+	background-color: #f1f6f8;
+}
+</style>
+<body>
+<h1>404 Not Found</h1>
+<p>Sorry, that dataset does not exist.</p>
+<p>This dataset may have been archived. Please send an email to <a href="mailto:hello@scraperwiki.com">hello@scraperwiki.com</a> if you would like it restored.</p>
+</body>
+</html>`
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusNotFound)
+
+		fmt.Fprintln(w, message)
+		return
+	}
+
+	root := http.Dir(httpDir)
 	staticHandler := http.StripPrefix(prefix, http.FileServer(root))
 	staticHandler.ServeHTTP(w, r)
 }
@@ -260,6 +285,7 @@ func NewHandler() http.Handler {
 
 	box.PathPrefix("/cgi-bin/").HandlerFunc(HandleCGI)
 	box.PathPrefix("/http/").HandlerFunc(HandleHTTP)
+	box.PathPrefix("/listing/").HandlerFunc(HandleHTTP)
 
 	n := negroni.Classic()
 	// n.Use(gzip.Gzip(1))
