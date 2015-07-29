@@ -140,28 +140,14 @@ func initCgroup() {
 		}
 	}
 
-	// 512MiB
-	const memoryLimit = 512 * 1024 * 1024
+	// 4 GiB
+	const memoryLimit = 4 * 1024 * 1024 * 1024
 
 	f := path.Join("/sys/fs/cgroup/memory", pamUser, "/memory.limit_in_bytes")
 	err = ioutil.WriteFile(f, []byte(fmt.Sprint(memoryLimit)), 0)
 	if err != nil {
 		Fatal("Failed to write", f, ":", err)
 	}
-
-	// echo $MemoryLimit > /sys/fs/cgroup/memory/$PAM_USER/memory.limit_in_bytes
-
-	// TODO(pwaller): do we want this? Maybe? Is there some other way we can give
-	// system things priority?
-
-	// # CPU share is form of priority. By specifying a low number here, we
-	// # ensure that important system services get a higher share of the CPU
-	// # and thus remain responsive.
-	// Priority=12
-	// echo $Priority > /sys/fs/cgroup/cpu/$PAM_USER/cpu.shares
-
-	// Put the owning process (usually the "su -l" or cron child process)
-	// into the cgroup (and therefore all of its future children)
 
 	files := []string{
 		path.Join("/sys/fs/cgroup/cpu", pamUser, "/tasks"),
