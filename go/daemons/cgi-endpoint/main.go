@@ -80,7 +80,7 @@ body {
 <body>
 <h1>404 Not Found</h1>
 <p>Sorry, that dataset does not exist.</p>
-<p>This dataset may have been archived. Please send an email to <a href="mailto:hello@scraperwiki.com">hello@scraperwiki.com</a> if you would like it restored.</p>
+<p>This dataset may have been archived. Please send an email to <a href="mailto:hello@quickcode.io">hello@quickcode.io</a> if you would like it restored.</p>
 </body>
 </html>`
 		w.Header().Set("Content-Type", "text/html")
