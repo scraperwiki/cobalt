@@ -133,7 +133,7 @@ fresh_apikey = ->
 
 docs = (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.send "See https://scraperwiki.com/help/developer/", 200
+  res.send "See https://app.quickcode.io/help/developer/", 200
 
 app.get "/", docs
 app.get "/:boxname/?", docs
