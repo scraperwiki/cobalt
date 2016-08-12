@@ -133,7 +133,7 @@ fresh_apikey = ->
 
 docs = (req, res) ->
   res.header('Content-Type', 'application/json')
-  res.send "See https://scraperwiki.com/help/developer/", 200
+  res.send "See https://app.quickcode.io/help/developer/", 200
 
 app.get "/", docs
 app.get "/:boxname/?", docs
@@ -180,7 +180,7 @@ app.post "/:boxname/exec/?", maxInFlightMiddleware(5), check_api_and_box, (req, 
   req.on 'close', -> su.kill()
 
 myCheckIdent = (req, res, next) ->
-  # ScraperWiki office / localhost
+  # Liverpool office / localhost
   if req.ip in [liverpool_office_ip, "10.0.0.10", "127.0.0.1"]
     req.ident = 'root'
     next()
